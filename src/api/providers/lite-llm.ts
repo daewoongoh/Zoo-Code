@@ -235,6 +235,18 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 					yield { type: "text", text: delta.content }
 				}
 
+				if (delta) {
+					for (const key of ["reasoning_content", "reasoning"] as const) {
+						if (key in delta) {
+							const reasoningText = ((delta as any)[key] as string | undefined) || ""
+							if (reasoningText?.trim()) {
+								yield { type: "reasoning", text: reasoningText }
+							}
+							break
+						}
+					}
+				}
+
 				// Handle tool calls in stream - emit partial chunks for NativeToolCallParser
 				if (delta?.tool_calls) {
 					for (const toolCall of delta.tool_calls) {
