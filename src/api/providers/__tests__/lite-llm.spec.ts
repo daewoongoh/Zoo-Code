@@ -808,6 +808,38 @@ describe("LiteLLMHandler", () => {
 			expect(reasoningChunks[0]).toMatchObject({ type: "reasoning", text: "from_reasoning_content" })
 		})
 
+		it("should not yield reasoning chunk when reasoning field is present but falsy", async () => {
+			const mockStream = {
+				async *[Symbol.asyncIterator]() {
+					yield {
+						choices: [{ delta: { reasoning_content: undefined } }],
+						usage: null,
+					}
+					yield {
+						choices: [{ delta: { reasoning: "" } }],
+						usage: null,
+					}
+					yield {
+						choices: [{ delta: { content: "Hello" } }],
+						usage: { prompt_tokens: 5, completion_tokens: 5 },
+					}
+				},
+			}
+
+			mockCreate.mockReturnValue({
+				withResponse: vi.fn().mockResolvedValue({ data: mockStream }),
+			})
+
+			const generator = handler.createMessage("system", [{ role: "user", content: "Hi" }])
+			const results = []
+			for await (const chunk of generator) {
+				results.push(chunk)
+			}
+
+			const reasoningChunks = results.filter((c) => c.type === "reasoning")
+			expect(reasoningChunks).toHaveLength(0)
+		})
+
 		it("should not yield reasoning chunk for empty or whitespace-only reasoning", async () => {
 			const mockStream = {
 				async *[Symbol.asyncIterator]() {
