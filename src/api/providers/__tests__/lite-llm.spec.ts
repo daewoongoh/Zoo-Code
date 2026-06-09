@@ -867,6 +867,35 @@ describe("LiteLLMHandler", () => {
 			const reasoningChunks = results.filter((c) => c.type === "reasoning")
 			expect(reasoningChunks).toHaveLength(0)
 		})
+
+		it("should fall back to reasoning when reasoning_content is null on the same delta", async () => {
+			const mockStream = {
+				async *[Symbol.asyncIterator]() {
+					yield {
+						choices: [{ delta: { reasoning_content: null, reasoning: "fallback thinking" } }],
+						usage: null,
+					}
+					yield {
+						choices: [{ delta: { content: "Answer." } }],
+						usage: { prompt_tokens: 5, completion_tokens: 5 },
+					}
+				},
+			}
+
+			mockCreate.mockReturnValue({
+				withResponse: vi.fn().mockResolvedValue({ data: mockStream }),
+			})
+
+			const generator = handler.createMessage("system", [{ role: "user", content: "Test." }])
+			const results = []
+			for await (const chunk of generator) {
+				results.push(chunk)
+			}
+
+			const reasoningChunks = results.filter((c) => c.type === "reasoning")
+			expect(reasoningChunks).toHaveLength(1)
+			expect(reasoningChunks[0]).toMatchObject({ type: "reasoning", text: "fallback thinking" })
+		})
 	})
 
 	describe("tool ID normalization", () => {

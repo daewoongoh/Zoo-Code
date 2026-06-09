@@ -13,6 +13,7 @@ import { sanitizeOpenAiCallId } from "../../utils/tool-id"
 
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { RouterProvider } from "./router-provider"
+import { extractReasoningFromDelta } from "./utils/extract-reasoning"
 
 /**
  * LiteLLM provider handler
@@ -235,16 +236,9 @@ export class LiteLLMHandler extends RouterProvider implements SingleCompletionHa
 					yield { type: "text", text: delta.content }
 				}
 
-				if (delta) {
-					for (const key of ["reasoning_content", "reasoning"] as const) {
-						if (key in delta) {
-							const reasoningText = ((delta as any)[key] as string | undefined) || ""
-							if (reasoningText?.trim()) {
-								yield { type: "reasoning", text: reasoningText }
-							}
-							break
-						}
-					}
+				const reasoningText = extractReasoningFromDelta(delta)
+				if (reasoningText) {
+					yield { type: "reasoning", text: reasoningText }
 				}
 
 				// Handle tool calls in stream - emit partial chunks for NativeToolCallParser
