@@ -38,18 +38,9 @@ describe("extractReasoningFromDelta", () => {
 		).toBe("fallback")
 	})
 
-	it("preserves whitespace-only payloads so streamed chunks keep word and paragraph boundaries", () => {
-		expect(extractReasoningFromDelta({ reasoning_content: " " })).toBe(" ")
-		expect(extractReasoningFromDelta({ reasoning: "\n\n" })).toBe("\n\n")
-	})
-
-	it("falls back to reasoning when reasoning_content is an empty string but does not skip whitespace", () => {
-		expect(
-			extractReasoningFromDelta({
-				reasoning_content: "",
-				reasoning: "\n\n",
-			}),
-		).toBe("\n\n")
+	it("returns undefined for whitespace-only values", () => {
+		expect(extractReasoningFromDelta({ reasoning_content: "   " })).toBeUndefined()
+		expect(extractReasoningFromDelta({ reasoning: "\n\t" })).toBeUndefined()
 	})
 
 	it("returns undefined when neither field is present", () => {

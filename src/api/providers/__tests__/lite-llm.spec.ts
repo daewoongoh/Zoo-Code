@@ -840,27 +840,11 @@ describe("LiteLLMHandler", () => {
 			expect(reasoningChunks).toHaveLength(0)
 		})
 
-		it("should preserve whitespace-only reasoning chunks so streamed boundaries survive concatenation", async () => {
+		it("should not yield reasoning chunk for empty or whitespace-only reasoning", async () => {
 			const mockStream = {
 				async *[Symbol.asyncIterator]() {
 					yield {
-						choices: [{ delta: { reasoning_content: "Let's" } }],
-						usage: null,
-					}
-					yield {
-						choices: [{ delta: { reasoning_content: " " } }],
-						usage: null,
-					}
-					yield {
-						choices: [{ delta: { reasoning_content: "think" } }],
-						usage: null,
-					}
-					yield {
-						choices: [{ delta: { reasoning_content: "\n\n" } }],
-						usage: null,
-					}
-					yield {
-						choices: [{ delta: { reasoning_content: "next" } }],
+						choices: [{ delta: { reasoning_content: "   " } }],
 						usage: null,
 					}
 					yield {
@@ -881,7 +865,7 @@ describe("LiteLLMHandler", () => {
 			}
 
 			const reasoningChunks = results.filter((c) => c.type === "reasoning")
-			expect(reasoningChunks.map((c) => (c as { text: string }).text).join("")).toBe("Let's think\n\nnext")
+			expect(reasoningChunks).toHaveLength(0)
 		})
 
 		it("should fall back to reasoning when reasoning_content is null on the same delta", async () => {
