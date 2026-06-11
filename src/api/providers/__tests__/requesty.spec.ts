@@ -62,6 +62,7 @@ describe("RequestyHandler", () => {
 				"X-Title": "Zoo Code",
 				"User-Agent": `ZooCode/${Package.version}`,
 			},
+			timeout: expect.any(Number),
 		})
 	})
 
@@ -77,6 +78,7 @@ describe("RequestyHandler", () => {
 				"X-Title": "Zoo Code",
 				"User-Agent": `ZooCode/${Package.version}`,
 			},
+			timeout: expect.any(Number),
 		})
 	})
 

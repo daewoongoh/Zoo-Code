@@ -9,6 +9,11 @@ vitest.mock("vscode", () => ({
 	window: { showErrorMessage },
 	env: { openExternal, uriScheme: "vscode", appName: "VS Code" },
 	Uri: { parse: (value: string) => ({ toString: () => value }) },
+	workspace: {
+		getConfiguration: () => ({
+			get: (_key: string, defaultValue?: unknown) => defaultValue,
+		}),
+	},
 }))
 
 vitest.mock("../../../i18n", () => ({
@@ -173,6 +178,7 @@ describe("ZooGatewayHandler", () => {
 					"X-Zoo-Editor": "vscode",
 					"X-Zoo-Extension-Version": Package.version,
 				}),
+				timeout: expect.any(Number),
 			})
 		})
 
