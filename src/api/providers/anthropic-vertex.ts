@@ -25,6 +25,7 @@ import {
 
 import { BaseProvider } from "./base-provider"
 import { parseVertexJsonCredentials } from "./utils/vertex-credentials"
+import { getApiRequestTimeout } from "./utils/timeout-config"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 
 // https://docs.anthropic.com/en/api/claude-on-vertex-ai
@@ -43,6 +44,8 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 
 		const parsedVertexCredentials = parseVertexJsonCredentials(this.options.vertexJsonCredentials)
 
+		const timeout = getApiRequestTimeout()
+
 		if (parsedVertexCredentials) {
 			this.client = new AnthropicVertex({
 				projectId,
@@ -51,6 +54,7 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 					scopes: ["https://www.googleapis.com/auth/cloud-platform"],
 					credentials: parsedVertexCredentials,
 				}),
+				timeout,
 			})
 		} else if (this.options.vertexKeyFile) {
 			this.client = new AnthropicVertex({
@@ -60,9 +64,10 @@ export class AnthropicVertexHandler extends BaseProvider implements SingleComple
 					scopes: ["https://www.googleapis.com/auth/cloud-platform"],
 					keyFile: this.options.vertexKeyFile,
 				}),
+				timeout,
 			})
 		} else {
-			this.client = new AnthropicVertex({ projectId, region })
+			this.client = new AnthropicVertex({ projectId, region, timeout })
 		}
 	}
 

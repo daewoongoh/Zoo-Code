@@ -15,6 +15,7 @@ import { ApiStream } from "../transform/stream"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
+import { getApiRequestTimeout } from "./utils/timeout-config"
 
 const QWEN_OAUTH_BASE_URL = "https://chat.qwen.ai"
 const QWEN_OAUTH_TOKEN_ENDPOINT = `${QWEN_OAUTH_BASE_URL}/api/v1/oauth2/token`
@@ -75,6 +76,7 @@ export class QwenCodeHandler extends BaseProvider implements SingleCompletionHan
 					"X-DashScope-UserAgent": `QwenCode/1.0.0 (${os.platform()}; ${os.arch()})`,
 					"X-DashScope-AuthType": "qwen-oauth",
 				},
+				timeout: getApiRequestTimeout(),
 			})
 		}
 		return this.client
