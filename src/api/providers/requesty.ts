@@ -9,7 +9,7 @@ import { calculateApiCostOpenAI } from "../../shared/cost"
 import { convertToOpenAiMessages } from "../transform/openai-format"
 import { ApiStream, ApiStreamUsageChunk } from "../transform/stream"
 import { getModelParams } from "../transform/model-params"
-import { AnthropicReasoningParams } from "../transform/reasoning"
+import { AnthropicProviderReasoningParams, getAnthropicProviderReasoning } from "../transform/reasoning"
 
 import { DEFAULT_HEADERS } from "./constants"
 import { getModels } from "./fetchers/modelCache"
@@ -19,6 +19,7 @@ import { toRequestyServiceUrl } from "../../shared/utils/requesty"
 import { handleOpenAIError } from "./utils/openai-error-handler"
 import { getApiRequestTimeout } from "./utils/timeout-config"
 import { applyRouterToolPreferences } from "./utils/router-tool-preferences"
+import { extractReasoningFromDelta } from "./utils/extract-reasoning"
 
 // Requesty usage includes an extra field for Anthropic use cases.
 // Safely cast the prompt token details section to the appropriate structure.
@@ -37,7 +38,7 @@ type RequestyChatCompletionParamsStreaming = OpenAI.Chat.Completions.ChatComplet
 			mode?: string
 		}
 	}
-	thinking?: AnthropicReasoningParams
+	thinking?: AnthropicProviderReasoningParams
 }
 
 type RequestyChatCompletionParams = OpenAI.Chat.ChatCompletionCreateParams & {
@@ -47,7 +48,7 @@ type RequestyChatCompletionParams = OpenAI.Chat.ChatCompletionCreateParams & {
 			mode?: string
 		}
 	}
-	thinking?: AnthropicReasoningParams
+	thinking?: AnthropicProviderReasoningParams
 }
 
 export class RequestyHandler extends BaseProvider implements SingleCompletionHandler {
@@ -93,8 +94,13 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 			settings: this.options,
 			defaultTemperature: 0,
 		})
+		const reasoning = getAnthropicProviderReasoning({
+			model: info,
+			reasoningBudget: params.reasoningBudget,
+			settings: this.options,
+		})
 
-		return { id, info, ...params }
+		return { id, info, ...params, reasoning }
 	}
 
 	protected processUsageMetrics(usage: any, modelInfo?: ModelInfo): ApiStreamUsageChunk {
@@ -171,8 +177,9 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 				yield { type: "text", text: delta.content }
 			}
 
-			if (delta && "reasoning_content" in delta && delta.reasoning_content) {
-				yield { type: "reasoning", text: (delta.reasoning_content as string | undefined) || "" }
+			const reasoningText = extractReasoningFromDelta(delta)
+			if (reasoningText) {
+				yield { type: "reasoning", text: reasoningText }
 			}
 
 			// Handle native tool calls
