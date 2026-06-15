@@ -260,6 +260,38 @@ describe("OpenAiHandler", () => {
 			expect(chunks).toContainEqual({ type: "reasoning", text: "router-style thought" })
 		})
 
+		it("prefers delta.reasoning_content over delta.reasoning when both are present", async () => {
+			mockCreate.mockImplementationOnce(async () => ({
+				[Symbol.asyncIterator]: async function* () {
+					yield {
+						choices: [
+							{
+								delta: {
+									reasoning_content: "primary thought",
+									reasoning: "fallback thought",
+								},
+								index: 0,
+							},
+						],
+					}
+					yield {
+						choices: [{ delta: {}, index: 0 }],
+						usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+					}
+				},
+			}))
+
+			const chunks: any[] = []
+
+			for await (const chunk of handler.createMessage(systemPrompt, messages)) {
+				chunks.push(chunk)
+			}
+
+			const reasoningChunks = chunks.filter((chunk) => chunk.type === "reasoning")
+
+			expect(reasoningChunks).toEqual([{ type: "reasoning", text: "primary thought" }])
+		})
+
 		it("should handle tool calls in streaming responses", async () => {
 			mockCreate.mockImplementation(async (options) => {
 				return {

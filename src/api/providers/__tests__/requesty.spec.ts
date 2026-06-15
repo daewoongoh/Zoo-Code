@@ -298,6 +298,41 @@ describe("RequestyHandler", () => {
 			expect(chunks).toContainEqual({ type: "reasoning", text: "router-style thought" })
 		})
 
+		it("prefers delta.reasoning_content over delta.reasoning when both are present", async () => {
+			const handler = new RequestyHandler(mockOptions)
+
+			mockCreate.mockResolvedValue({
+				async *[Symbol.asyncIterator]() {
+					yield {
+						id: "1",
+						choices: [
+							{
+								delta: {
+									reasoning_content: "primary thought",
+									reasoning: "fallback thought",
+								},
+							},
+						],
+					}
+					yield {
+						id: "1",
+						choices: [{ delta: {} }],
+						usage: { prompt_tokens: 1, completion_tokens: 1 },
+					}
+				},
+			})
+
+			const chunks: any[] = []
+
+			for await (const chunk of handler.createMessage("sys", [{ role: "user", content: "hi" }])) {
+				chunks.push(chunk)
+			}
+
+			const reasoningChunks = chunks.filter((chunk) => chunk.type === "reasoning")
+
+			expect(reasoningChunks).toEqual([{ type: "reasoning", text: "primary thought" }])
+		})
+
 		describe("native tool support", () => {
 			const systemPrompt = "test system prompt"
 			const messages: Anthropic.Messages.MessageParam[] = [
