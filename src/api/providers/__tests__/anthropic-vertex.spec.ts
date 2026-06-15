@@ -11,7 +11,9 @@ import { ApiStreamChunk } from "../../transform/stream"
 import { AnthropicVertexHandler } from "../anthropic-vertex"
 
 vitest.mock("google-auth-library", () => ({
-	GoogleAuth: vitest.fn().mockImplementation((opts) => ({ __googleAuthOptions: opts })),
+	GoogleAuth: vitest.fn().mockImplementation(function (opts) {
+		return { __googleAuthOptions: opts }
+	}),
 }))
 
 vitest.mock("@anthropic-ai/vertex-sdk", () => ({
