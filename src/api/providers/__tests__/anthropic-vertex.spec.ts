@@ -2,12 +2,17 @@
 
 import { Anthropic } from "@anthropic-ai/sdk"
 import { AnthropicVertex } from "@anthropic-ai/vertex-sdk"
+import { GoogleAuth } from "google-auth-library"
 
 import { VERTEX_1M_CONTEXT_MODEL_IDS } from "@roo-code/types"
 
 import { ApiStreamChunk } from "../../transform/stream"
 
 import { AnthropicVertexHandler } from "../anthropic-vertex"
+
+vitest.mock("google-auth-library", () => ({
+	GoogleAuth: vitest.fn().mockImplementation((opts) => ({ __googleAuthOptions: opts })),
+}))
 
 vitest.mock("@anthropic-ai/vertex-sdk", () => ({
 	AnthropicVertex: vitest.fn().mockImplementation(() => ({
@@ -54,6 +59,11 @@ describe("VertexHandler", () => {
 	let handler: AnthropicVertexHandler
 
 	describe("constructor", () => {
+		beforeEach(() => {
+			;(AnthropicVertex as any).mockClear()
+			;(GoogleAuth as any).mockClear()
+		})
+
 		it("should initialize with provided config for Claude", () => {
 			handler = new AnthropicVertexHandler({
 				apiModelId: "claude-3-5-sonnet-v2@20241022",
@@ -66,6 +76,56 @@ describe("VertexHandler", () => {
 				region: "us-central1",
 				timeout: expect.any(Number),
 			})
+		})
+
+		it("should pass timeout when initializing with vertexJsonCredentials", () => {
+			const credentials = {
+				type: "service_account",
+				client_email: "test@test-project.iam.gserviceaccount.com",
+				private_key: "-----BEGIN PRIVATE KEY-----\nfake\n-----END PRIVATE KEY-----\n",
+			}
+
+			handler = new AnthropicVertexHandler({
+				apiModelId: "claude-3-5-sonnet-v2@20241022",
+				vertexProjectId: "test-project",
+				vertexRegion: "us-central1",
+				vertexJsonCredentials: JSON.stringify(credentials),
+			})
+
+			expect(GoogleAuth).toHaveBeenCalledWith({
+				scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+				credentials,
+			})
+			expect(AnthropicVertex).toHaveBeenCalledWith(
+				expect.objectContaining({
+					projectId: "test-project",
+					region: "us-central1",
+					googleAuth: expect.any(Object),
+					timeout: expect.any(Number),
+				}),
+			)
+		})
+
+		it("should pass timeout when initializing with vertexKeyFile", () => {
+			handler = new AnthropicVertexHandler({
+				apiModelId: "claude-3-5-sonnet-v2@20241022",
+				vertexProjectId: "test-project",
+				vertexRegion: "us-central1",
+				vertexKeyFile: "/tmp/sa-key.json",
+			})
+
+			expect(GoogleAuth).toHaveBeenCalledWith({
+				scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+				keyFile: "/tmp/sa-key.json",
+			})
+			expect(AnthropicVertex).toHaveBeenCalledWith(
+				expect.objectContaining({
+					projectId: "test-project",
+					region: "us-central1",
+					googleAuth: expect.any(Object),
+					timeout: expect.any(Number),
+				}),
+			)
 		})
 	})
 
