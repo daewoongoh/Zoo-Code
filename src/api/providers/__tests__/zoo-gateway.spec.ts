@@ -1,5 +1,11 @@
 // npx vitest run src/api/providers/__tests__/zoo-gateway.spec.ts
 
+vitest.mock("../utils/timeout-config", () => ({
+	getApiRequestTimeout: vitest.fn().mockReturnValue(300_000),
+}))
+
+const MOCK_TIMEOUT_MS = 300_000
+
 const { showErrorMessage, openExternal } = vitest.hoisted(() => ({
 	showErrorMessage: vitest.fn(async () => undefined as string | undefined),
 	openExternal: vitest.fn(async () => true),
@@ -183,7 +189,7 @@ describe("ZooGatewayHandler", () => {
 					"X-Zoo-Editor": "vscode",
 					"X-Zoo-Extension-Version": Package.version,
 				}),
-				timeout: expect.any(Number),
+				timeout: MOCK_TIMEOUT_MS,
 			})
 		})
 

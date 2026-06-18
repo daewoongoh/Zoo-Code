@@ -8,6 +8,12 @@ vitest.mock("vscode", () => ({
 	},
 }))
 
+vitest.mock("../utils/timeout-config", () => ({
+	getApiRequestTimeout: vitest.fn().mockReturnValue(300_000),
+}))
+
+const MOCK_TIMEOUT_MS = 300_000
+
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
 
@@ -114,7 +120,7 @@ describe("OpenRouterHandler", () => {
 				"X-Title": "Zoo Code",
 				"User-Agent": `ZooCode/${Package.version}`,
 			},
-			timeout: expect.any(Number),
+			timeout: MOCK_TIMEOUT_MS,
 		})
 	})
 

@@ -10,6 +10,12 @@ import { ApiStreamChunk } from "../../transform/stream"
 
 import { AnthropicVertexHandler } from "../anthropic-vertex"
 
+vitest.mock("../utils/timeout-config", () => ({
+	getApiRequestTimeout: vitest.fn().mockReturnValue(300_000),
+}))
+
+const MOCK_TIMEOUT_MS = 300_000
+
 vitest.mock("google-auth-library", () => ({
 	GoogleAuth: vitest.fn().mockImplementation(function (opts) {
 		return { __googleAuthOptions: opts }
@@ -78,7 +84,7 @@ describe("VertexHandler", () => {
 			expect(AnthropicVertex).toHaveBeenCalledWith({
 				projectId: "test-project",
 				region: "us-central1",
-				timeout: expect.any(Number),
+				timeout: MOCK_TIMEOUT_MS,
 			})
 		})
 
@@ -105,7 +111,7 @@ describe("VertexHandler", () => {
 					projectId: "test-project",
 					region: "us-central1",
 					googleAuth: expect.any(Object),
-					timeout: expect.any(Number),
+					timeout: MOCK_TIMEOUT_MS,
 				}),
 			)
 		})
@@ -127,7 +133,7 @@ describe("VertexHandler", () => {
 					projectId: "test-project",
 					region: "us-central1",
 					googleAuth: expect.any(Object),
-					timeout: expect.any(Number),
+					timeout: MOCK_TIMEOUT_MS,
 				}),
 			)
 		})
