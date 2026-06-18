@@ -20,7 +20,6 @@ import { getModelParams } from "../transform/model-params"
 import { filterNonAnthropicBlocks } from "../transform/anthropic-filter"
 import { getAnthropicProviderReasoning } from "../transform/reasoning"
 import { handleProviderError } from "./utils/error-handler"
-import { getApiRequestTimeout } from "./utils/timeout-config"
 
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
@@ -45,7 +44,7 @@ export class AnthropicHandler extends BaseProvider implements SingleCompletionHa
 		this.client = new Anthropic({
 			baseURL: this.options.anthropicBaseUrl || undefined,
 			[apiKeyFieldName]: this.options.apiKey,
-			timeout: getApiRequestTimeout(),
+			timeout: this.timeoutMs,
 		})
 	}
 

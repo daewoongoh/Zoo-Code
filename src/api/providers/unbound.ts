@@ -16,7 +16,6 @@ import { getModels } from "./fetchers/modelCache"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { handleOpenAIError } from "./utils/openai-error-handler"
-import { getApiRequestTimeout } from "./utils/timeout-config"
 import { applyRouterToolPreferences } from "./utils/router-tool-preferences"
 import { extractReasoningFromDelta } from "./utils/extract-reasoning"
 
@@ -64,7 +63,7 @@ export class UnboundHandler extends BaseProvider implements SingleCompletionHand
 				...DEFAULT_HEADERS,
 				"X-Unbound-Metadata": JSON.stringify({ labels: [{ key: "app", value: "zoo-code" }] }),
 			},
-			timeout: getApiRequestTimeout(),
+			timeout: this.timeoutMs,
 		})
 	}
 

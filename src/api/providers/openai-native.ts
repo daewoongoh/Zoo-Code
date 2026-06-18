@@ -29,7 +29,6 @@ import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { isMcpTool } from "../../utils/mcp-name"
 import { sanitizeOpenAiCallId } from "../../utils/tool-id"
-import { getApiRequestTimeout } from "./utils/timeout-config"
 
 export type OpenAiNativeModel = ReturnType<OpenAiNativeHandler["getModel"]>
 
@@ -105,7 +104,7 @@ export class OpenAiNativeHandler extends BaseProvider implements SingleCompletio
 				session_id: this.sessionId,
 				"User-Agent": userAgent,
 			},
-			timeout: getApiRequestTimeout(),
+			timeout: this.timeoutMs,
 		})
 	}
 

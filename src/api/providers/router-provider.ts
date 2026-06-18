@@ -8,7 +8,6 @@ import { BaseProvider } from "./base-provider"
 import { getModels, getModelsFromCache } from "./fetchers/modelCache"
 
 import { DEFAULT_HEADERS } from "./constants"
-import { getApiRequestTimeout } from "./utils/timeout-config"
 
 type RouterProviderOptions = {
 	name: RouterName
@@ -53,7 +52,7 @@ export abstract class RouterProvider extends BaseProvider {
 				...DEFAULT_HEADERS,
 				...(options.openAiHeaders || {}),
 			},
-			timeout: getApiRequestTimeout(),
+			timeout: this.timeoutMs,
 		})
 	}
 

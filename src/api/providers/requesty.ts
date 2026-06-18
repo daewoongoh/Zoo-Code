@@ -17,7 +17,6 @@ import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { toRequestyServiceUrl } from "../../shared/utils/requesty"
 import { handleOpenAIError } from "./utils/openai-error-handler"
-import { getApiRequestTimeout } from "./utils/timeout-config"
 import { applyRouterToolPreferences } from "./utils/router-tool-preferences"
 import { extractReasoningFromDelta } from "./utils/extract-reasoning"
 
@@ -70,7 +69,7 @@ export class RequestyHandler extends BaseProvider implements SingleCompletionHan
 			baseURL: this.baseURL,
 			apiKey: apiKey,
 			defaultHeaders: DEFAULT_HEADERS,
-			timeout: getApiRequestTimeout(),
+			timeout: this.timeoutMs,
 		})
 	}
 

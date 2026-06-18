@@ -15,7 +15,6 @@ import { DEFAULT_HEADERS } from "./constants"
 import { BaseProvider } from "./base-provider"
 import type { SingleCompletionHandler, ApiHandlerCreateMessageMetadata } from "../index"
 import { handleOpenAIError } from "./utils/openai-error-handler"
-import { getApiRequestTimeout } from "./utils/timeout-config"
 import { isMcpTool } from "../../utils/mcp-name"
 
 const XAI_DEFAULT_TEMPERATURE = 0
@@ -35,7 +34,7 @@ export class XAIHandler extends BaseProvider implements SingleCompletionHandler 
 			baseURL: "https://api.x.ai/v1",
 			apiKey: apiKey,
 			defaultHeaders: DEFAULT_HEADERS,
-			timeout: getApiRequestTimeout(),
+			timeout: this.timeoutMs,
 		})
 	}
 
