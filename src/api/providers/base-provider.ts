@@ -12,11 +12,8 @@ import { getApiRequestTimeout } from "./utils/timeout-config"
  * Base class for API providers that implements common functionality.
  */
 export abstract class BaseProvider implements ApiHandler {
-	protected readonly timeoutMs: number
+	protected readonly timeoutMs: number = getApiRequestTimeout()
 
-	constructor() {
-		this.timeoutMs = getApiRequestTimeout()
-	}
 	abstract createMessage(
 		systemPrompt: string,
 		messages: Anthropic.Messages.MessageParam[],
