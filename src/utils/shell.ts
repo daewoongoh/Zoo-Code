@@ -139,7 +139,8 @@ type LinuxTerminalProfiles = Record<string, LinuxTerminalProfile>
 function getWindowsTerminalConfig() {
 	try {
 		const config = vscode.workspace.getConfiguration("terminal.integrated")
-		const defaultProfileName = config.get<string>("defaultProfile.windows")
+		const rawProfileName = config.get<string>("defaultProfile.windows")
+		const defaultProfileName = typeof rawProfileName === "string" ? rawProfileName : null
 		const profiles = config.get<WindowsTerminalProfiles>("profiles.windows") || {}
 		return { defaultProfileName, profiles }
 	} catch {
@@ -150,7 +151,8 @@ function getWindowsTerminalConfig() {
 function getMacTerminalConfig() {
 	try {
 		const config = vscode.workspace.getConfiguration("terminal.integrated")
-		const defaultProfileName = config.get<string>("defaultProfile.osx")
+		const rawProfileName = config.get<string>("defaultProfile.osx")
+		const defaultProfileName = typeof rawProfileName === "string" ? rawProfileName : null
 		const profiles = config.get<MacTerminalProfiles>("profiles.osx") || {}
 		return { defaultProfileName, profiles }
 	} catch {
@@ -161,7 +163,8 @@ function getMacTerminalConfig() {
 function getLinuxTerminalConfig() {
 	try {
 		const config = vscode.workspace.getConfiguration("terminal.integrated")
-		const defaultProfileName = config.get<string>("defaultProfile.linux")
+		const rawProfileName = config.get<string>("defaultProfile.linux")
+		const defaultProfileName = typeof rawProfileName === "string" ? rawProfileName : null
 		const profiles = config.get<LinuxTerminalProfiles>("profiles.linux") || {}
 		return { defaultProfileName, profiles }
 	} catch {

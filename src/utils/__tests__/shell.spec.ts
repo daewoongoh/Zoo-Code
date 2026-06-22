@@ -371,6 +371,127 @@ describe("Shell Detection Tests", () => {
 	})
 
 	// --------------------------------------------------------------------------
+	// Non-string defaultProfileName Handling
+	// --------------------------------------------------------------------------
+	describe("Non-string defaultProfileName handling", () => {
+		it("Windows: handles numeric defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "win32" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.windows") return 1
+					if (key === "profiles.windows") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+			vi.mocked(existsSync).mockReturnValue(false)
+
+			expect(getShell()).toBe("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
+		})
+
+		it("Windows: handles boolean defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "win32" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.windows") return true
+					if (key === "profiles.windows") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+			vi.mocked(existsSync).mockReturnValue(false)
+
+			expect(getShell()).toBe("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
+		})
+
+		it("Windows: handles array defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "win32" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.windows") return ["PowerShell"]
+					if (key === "profiles.windows") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+			vi.mocked(existsSync).mockReturnValue(false)
+
+			expect(getShell()).toBe("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
+		})
+
+		it("Windows: handles object defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "win32" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.windows") return { name: "PowerShell" }
+					if (key === "profiles.windows") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+			vi.mocked(existsSync).mockReturnValue(false)
+
+			expect(getShell()).toBe("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
+		})
+
+		it("macOS: handles numeric defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "darwin" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.osx") return 1
+					if (key === "profiles.osx") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			expect(getShell()).toBe("/bin/zsh")
+		})
+
+		it("macOS: handles object defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "darwin" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.osx") return {}
+					if (key === "profiles.osx") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			expect(getShell()).toBe("/bin/zsh")
+		})
+
+		it("Linux: handles numeric defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "linux" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.linux") return 1
+					if (key === "profiles.linux") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			expect(getShell()).toBe("/bin/bash")
+		})
+
+		it("Linux: handles object defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "linux" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.linux") return {}
+					if (key === "profiles.linux") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			expect(getShell()).toBe("/bin/bash")
+		})
+	})
+
+	// --------------------------------------------------------------------------
 	// Shell Validation Tests
 	// --------------------------------------------------------------------------
 	describe("Shell Validation", () => {
