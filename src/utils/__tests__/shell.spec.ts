@@ -371,6 +371,79 @@ describe("Shell Detection Tests", () => {
 	})
 
 	// --------------------------------------------------------------------------
+	// getTerminalConfig Behavior (tested via getShell)
+	// --------------------------------------------------------------------------
+	describe("getTerminalConfig", () => {
+		it("returns defaultProfileName and matching profile for Windows", () => {
+			Object.defineProperty(process, "platform", { value: "win32" })
+			mockVsCodeConfig("windows", "Command Prompt", {
+				"Command Prompt": { path: "C:\\Windows\\System32\\cmd.exe" },
+			})
+			expect(getShell()).toBe("C:\\Windows\\System32\\cmd.exe")
+		})
+
+		it("returns defaultProfileName and matching profile for macOS", () => {
+			Object.defineProperty(process, "platform", { value: "darwin" })
+			mockVsCodeConfig("osx", "fish", {
+				fish: { path: "/usr/local/bin/fish" },
+			})
+			expect(getShell()).toBe("/usr/local/bin/fish")
+		})
+
+		it("returns defaultProfileName and matching profile for Linux", () => {
+			Object.defineProperty(process, "platform", { value: "linux" })
+			mockVsCodeConfig("linux", "zsh", {
+				zsh: { path: "/usr/bin/zsh" },
+			})
+			expect(getShell()).toBe("/usr/bin/zsh")
+		})
+
+		it("returns null defaultProfileName when config value is undefined", () => {
+			Object.defineProperty(process, "platform", { value: "linux" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.linux") return undefined
+					if (key === "profiles.linux") return { bash: { path: "/bin/bash" } }
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+			expect(getShell()).toBe("/bin/bash")
+		})
+
+		it("returns empty profiles when profiles config is null", () => {
+			Object.defineProperty(process, "platform", { value: "linux" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.linux") return "bash"
+					if (key === "profiles.linux") return null
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+			expect(getShell()).toBe("/bin/bash")
+		})
+
+		it("returns fallback when getConfiguration throws", () => {
+			Object.defineProperty(process, "platform", { value: "darwin" })
+			vi.mocked(vscode.workspace.getConfiguration).mockImplementation(() => {
+				throw new Error("config error")
+			})
+			expect(getShell()).toBe("/bin/zsh")
+		})
+
+		it("returns fallback when config.get throws", () => {
+			Object.defineProperty(process, "platform", { value: "linux" })
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
+				get: () => {
+					throw new Error("get error")
+				},
+			} as any)
+			expect(getShell()).toBe("/bin/bash")
+		})
+	})
+
+	// --------------------------------------------------------------------------
 	// Non-string defaultProfileName Handling
 	// --------------------------------------------------------------------------
 	describe("Non-string defaultProfileName handling", () => {
