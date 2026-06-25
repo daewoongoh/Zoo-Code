@@ -521,6 +521,34 @@ describe("Shell Detection Tests", () => {
 			expect(getShell()).toBe("/bin/zsh")
 		})
 
+		it("macOS: handles boolean defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "darwin" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.osx") return true
+					if (key === "profiles.osx") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			expect(getShell()).toBe("/bin/zsh")
+		})
+
+		it("macOS: handles array defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "darwin" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.osx") return ["zsh"]
+					if (key === "profiles.osx") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			expect(getShell()).toBe("/bin/zsh")
+		})
+
 		it("macOS: handles object defaultProfileName without TypeError", () => {
 			Object.defineProperty(process, "platform", { value: "darwin" })
 			const mockConfig = {
@@ -535,11 +563,58 @@ describe("Shell Detection Tests", () => {
 			expect(getShell()).toBe("/bin/zsh")
 		})
 
+		// Mutation-resistant: without the typeof guard, profiles[1] === profiles["1"] in JS,
+		// so a numeric key that matches a real profile would return its path instead of falling back.
+		it("macOS: ignores numeric defaultProfileName even when it matches a profile key", () => {
+			Object.defineProperty(process, "platform", { value: "darwin" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.osx") return 1
+					// Profile keyed as "1" — would be reached by profiles[1] if the guard were absent
+					if (key === "profiles.osx") return { "1": { path: "/usr/local/bin/zsh" } }
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			// Guard treats 1 as null → getMacShellFromVSCode returns null → fallback to /bin/zsh
+			// Without the guard it would return /usr/local/bin/zsh
+			expect(getShell()).toBe("/bin/zsh")
+		})
+
 		it("Linux: handles numeric defaultProfileName without TypeError", () => {
 			Object.defineProperty(process, "platform", { value: "linux" })
 			const mockConfig = {
 				get: vi.fn((key: string) => {
 					if (key === "defaultProfile.linux") return 1
+					if (key === "profiles.linux") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			expect(getShell()).toBe("/bin/bash")
+		})
+
+		it("Linux: handles boolean defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "linux" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.linux") return true
+					if (key === "profiles.linux") return {}
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			expect(getShell()).toBe("/bin/bash")
+		})
+
+		it("Linux: handles array defaultProfileName without TypeError", () => {
+			Object.defineProperty(process, "platform", { value: "linux" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.linux") return ["bash"]
 					if (key === "profiles.linux") return {}
 					return undefined
 				}),
@@ -560,6 +635,24 @@ describe("Shell Detection Tests", () => {
 			}
 			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
 
+			expect(getShell()).toBe("/bin/bash")
+		})
+
+		// Mutation-resistant: same pattern as macOS — numeric key matches profile "1" only if unguarded.
+		it("Linux: ignores numeric defaultProfileName even when it matches a profile key", () => {
+			Object.defineProperty(process, "platform", { value: "linux" })
+			const mockConfig = {
+				get: vi.fn((key: string) => {
+					if (key === "defaultProfile.linux") return 1
+					// Profile keyed as "1" — would be reached by profiles[1] if the guard were absent
+					if (key === "profiles.linux") return { "1": { path: "/usr/bin/fish" } }
+					return undefined
+				}),
+			}
+			vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfig as any)
+
+			// Guard treats 1 as null → getLinuxShellFromVSCode returns null → fallback to /bin/bash
+			// Without the guard it would return /usr/bin/fish
 			expect(getShell()).toBe("/bin/bash")
 		})
 	})
