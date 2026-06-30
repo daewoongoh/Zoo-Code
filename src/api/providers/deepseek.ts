@@ -137,7 +137,7 @@ export class DeepSeekHandler extends OpenAiHandler {
 				isAzureAiInference ? { path: OPENAI_AZURE_AI_INFERENCE_PATH } : {},
 			)
 		} catch (error) {
-			const { handleOpenAIError } = await import("./utils/openai-error-handler")
+			const { handleOpenAIError } = await import("./utils/error-handler")
 			throw handleOpenAIError(error, "DeepSeek")
 		}
 
