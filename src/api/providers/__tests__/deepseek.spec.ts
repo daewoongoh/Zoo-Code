@@ -426,6 +426,14 @@ describe("DeepSeekHandler", () => {
 			expect(chunks).toContainEqual({ type: "reasoning", text: "router-style thought" })
 		})
 
+		it("should throw a wrapped error when the API call fails", async () => {
+			const apiError = Object.assign(new Error("Invalid API key"), { status: 401 })
+			mockCreate.mockRejectedValueOnce(apiError)
+
+			const stream = handler.createMessage(systemPrompt, messages)
+			await expect(stream.next()).rejects.toThrow("DeepSeek completion error: Invalid API key")
+		})
+
 		it("prefers delta.reasoning_content over delta.reasoning when both are present", async () => {
 			mockCreate.mockImplementationOnce(async () => ({
 				[Symbol.asyncIterator]: async function* () {
