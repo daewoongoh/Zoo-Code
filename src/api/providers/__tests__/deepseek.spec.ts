@@ -431,7 +431,10 @@ describe("DeepSeekHandler", () => {
 			mockCreate.mockRejectedValueOnce(apiError)
 
 			const stream = handler.createMessage(systemPrompt, messages)
-			await expect(stream.next()).rejects.toThrow("DeepSeek completion error: Invalid API key")
+			const err = await stream.next().catch((e) => e)
+
+			expect(err.message).toBe("DeepSeek completion error: Invalid API key")
+			expect((err as any).status).toBe(401)
 		})
 
 		it("prefers delta.reasoning_content over delta.reasoning when both are present", async () => {
