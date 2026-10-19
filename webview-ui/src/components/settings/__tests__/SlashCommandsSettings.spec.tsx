@@ -247,7 +247,7 @@ describe("SlashCommandsSettings", () => {
 		renderSlashCommandsSettings()
 
 		// Find the delete button for the global command (using the button with Trash2 icon)
-		const deleteButtons = screen.getAllByTestId("button").filter((btn) => btn.querySelector(".text-destructive"))
+		const deleteButtons = screen.getAllByTestId("button").filter((btn) => btn.querySelector(".codicon-trash"))
 		fireEvent.click(deleteButtons[0])
 
 		// Alert dialog should be open with delete confirmation
@@ -259,7 +259,7 @@ describe("SlashCommandsSettings", () => {
 		renderSlashCommandsSettings()
 
 		// Click delete button for global command
-		const deleteButtons = screen.getAllByTestId("button").filter((btn) => btn.querySelector(".text-destructive"))
+		const deleteButtons = screen.getAllByTestId("button").filter((btn) => btn.querySelector(".codicon-trash"))
 		fireEvent.click(deleteButtons[0])
 
 		// Click confirm delete
@@ -279,7 +279,7 @@ describe("SlashCommandsSettings", () => {
 		renderSlashCommandsSettings()
 
 		// Click delete button
-		const deleteButtons = screen.getAllByTestId("button").filter((btn) => btn.querySelector(".text-destructive"))
+		const deleteButtons = screen.getAllByTestId("button").filter((btn) => btn.querySelector(".codicon-trash"))
 		fireEvent.click(deleteButtons[0])
 
 		// Click cancel
@@ -300,13 +300,9 @@ describe("SlashCommandsSettings", () => {
 		// Clear mocks after initial mount
 		vi.clearAllMocks()
 
-		// Find edit buttons (icon size buttons without text-destructive, with lucide-square-pen icon)
 		const allButtons = screen.getAllByTestId("button")
 		const editButtons = allButtons.filter(
-			(btn) =>
-				btn.getAttribute("data-size") === "icon" &&
-				!btn.querySelector('[class*="text-destructive"]') &&
-				btn.querySelector('[class*="lucide-square-pen"]'),
+			(btn) => btn.getAttribute("data-size") === "icon" && btn.querySelector(".codicon-edit"),
 		)
 
 		// Click the first edit button
@@ -322,7 +318,7 @@ describe("SlashCommandsSettings", () => {
 		renderSlashCommandsSettings()
 
 		// Click delete button
-		const deleteButtons = screen.getAllByTestId("button").filter((btn) => btn.querySelector(".text-destructive"))
+		const deleteButtons = screen.getAllByTestId("button").filter((btn) => btn.querySelector(".codicon-trash"))
 		fireEvent.click(deleteButtons[0])
 
 		// Click confirm delete

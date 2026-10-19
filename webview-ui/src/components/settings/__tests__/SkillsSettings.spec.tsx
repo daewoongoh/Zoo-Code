@@ -266,7 +266,7 @@ describe("SkillsSettings", () => {
 		const buttons = screen.getAllByTestId("button")
 		// The delete button should be after the edit button for each skill
 		// Find the first delete button (for project-skill)
-		const deleteButtons = buttons.filter((btn) => btn.querySelector('[class*="text-destructive"]'))
+		const deleteButtons = buttons.filter((btn) => btn.querySelector(".codicon-trash"))
 		expect(deleteButtons.length).toBeGreaterThan(0)
 		fireEvent.click(deleteButtons[0])
 
@@ -279,7 +279,7 @@ describe("SkillsSettings", () => {
 
 		// Find and click delete button
 		const buttons = screen.getAllByTestId("button")
-		const deleteButtons = buttons.filter((btn) => btn.querySelector('[class*="text-destructive"]'))
+		const deleteButtons = buttons.filter((btn) => btn.querySelector(".codicon-trash"))
 		fireEvent.click(deleteButtons[0])
 
 		const confirmButton = screen.getByTestId("alert-dialog-action")
@@ -300,7 +300,7 @@ describe("SkillsSettings", () => {
 
 		// Find and click delete button
 		const buttons = screen.getAllByTestId("button")
-		const deleteButtons = buttons.filter((btn) => btn.querySelector('[class*="text-destructive"]'))
+		const deleteButtons = buttons.filter((btn) => btn.querySelector(".codicon-trash"))
 		fireEvent.click(deleteButtons[0])
 
 		const cancelButton = screen.getByTestId("alert-dialog-cancel")
@@ -314,14 +314,8 @@ describe("SkillsSettings", () => {
 
 		// Find edit buttons (buttons without destructive class that are icon size)
 		const buttons = screen.getAllByTestId("button")
-		// Filter to find edit buttons (the ones with Edit icon, not Add, Delete, or Settings/Gear)
-		// Edit button uses lucide-square-pen icon, Settings uses lucide-settings
 		const editButtons = buttons.filter(
-			(btn) =>
-				btn.getAttribute("data-size") === "icon" &&
-				!btn.querySelector('[class*="text-destructive"]') &&
-				!btn.querySelector('[class*="lucide-settings"]') &&
-				btn.querySelector('[class*="lucide-square-pen"]'),
+			(btn) => btn.getAttribute("data-size") === "icon" && btn.querySelector(".codicon-edit"),
 		)
 		// Click the first edit button (for project-skill)
 		fireEvent.click(editButtons[0])
@@ -342,7 +336,7 @@ describe("SkillsSettings", () => {
 
 		// Find and click delete button
 		const buttons = screen.getAllByTestId("button")
-		const deleteButtons = buttons.filter((btn) => btn.querySelector('[class*="text-destructive"]'))
+		const deleteButtons = buttons.filter((btn) => btn.querySelector(".codicon-trash"))
 		fireEvent.click(deleteButtons[0])
 
 		const confirmButton = screen.getByTestId("alert-dialog-action")

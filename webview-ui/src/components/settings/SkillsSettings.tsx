@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react"
-import { Plus, Globe, Folder, Edit, Trash2, Settings } from "lucide-react"
+import { Plus, Globe, Folder, Settings } from "lucide-react"
 import { Trans } from "react-i18next"
 
 import type { SkillMetadata } from "@roo-code/types"
@@ -193,13 +193,13 @@ export const SkillsSettings: React.FC = () => {
 
 							<StandardTooltip content={t("settings:skills.editSkill")}>
 								<Button variant="ghost" size="icon" onClick={() => handleEditClick(skill)}>
-									<Edit />
+									<span className="codicon codicon-edit" />
 								</Button>
 							</StandardTooltip>
 
 							<StandardTooltip content={t("settings:skills.deleteSkill")}>
 								<Button variant="ghost" size="icon" onClick={() => handleDeleteClick(skill)}>
-									<Trash2 className="text-destructive" />
+									<span className="codicon codicon-trash" />
 								</Button>
 							</StandardTooltip>
 						</div>

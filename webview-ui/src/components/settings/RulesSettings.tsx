@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { Edit, Folder, Globe, Plus, ScrollText, Trash2 } from "lucide-react"
+import { Folder, Globe, Plus, ScrollText } from "lucide-react"
 
 import type { RuleMetadata } from "@roo-code/types"
 
@@ -112,12 +112,12 @@ export const RulesSettings: React.FC = () => {
 					<div className="flex items-center gap-1 px-0 ml-0 min-[400px]:ml-0 min-[400px]:mt-2 flex-shrink-0">
 						<StandardTooltip content={t("settings:rules.editRule")}>
 							<Button variant="ghost" size="icon" onClick={() => handleEditClick(rule)}>
-								<Edit />
+								<span className="codicon codicon-edit" />
 							</Button>
 						</StandardTooltip>
 						<StandardTooltip content={t("settings:rules.deleteRule")}>
 							<Button variant="ghost" size="icon" onClick={() => handleDeleteClick(rule)}>
-								<Trash2 className="text-destructive" />
+								<span className="codicon codicon-trash" />
 							</Button>
 						</StandardTooltip>
 					</div>

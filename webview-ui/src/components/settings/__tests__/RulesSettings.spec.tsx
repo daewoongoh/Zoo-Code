@@ -165,9 +165,7 @@ describe("RulesSettings", () => {
 
 		const editButtons = screen
 			.getAllByTestId("button")
-			.filter(
-				(button) => button.getAttribute("data-size") === "icon" && !button.querySelector(".text-destructive"),
-			)
+			.filter((button) => button.getAttribute("data-size") === "icon" && button.querySelector(".codicon-edit"))
 		fireEvent.click(editButtons[0])
 
 		expect(vscode.postMessage).toHaveBeenCalledWith({
@@ -184,9 +182,7 @@ describe("RulesSettings", () => {
 		renderRulesSettings()
 		vi.clearAllMocks()
 
-		const deleteButtons = screen
-			.getAllByTestId("button")
-			.filter((button) => button.querySelector(".text-destructive"))
+		const deleteButtons = screen.getAllByTestId("button").filter((button) => button.querySelector(".codicon-trash"))
 		fireEvent.click(deleteButtons[0])
 
 		expect(screen.getByTestId("alert-dialog")).toHaveAttribute("data-open", "true")

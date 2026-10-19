@@ -73,7 +73,7 @@
 			{
 				"command": "zoo-code.plusButtonClicked",
 				"title": "%command.newTask.title%",
-				"icon": "$(edit)"
+				"icon": "$(new-session)"
 			},
 			{
 				"command": "zoo-code.historyButtonClicked",
