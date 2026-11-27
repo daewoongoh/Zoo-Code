@@ -28,6 +28,7 @@
 	"sections": {
 		"providers": "공급자",
 		"modes": "모드",
+		"subagents": "서브에이전트",
 		"mcp": "MCP 서버",
 		"worktrees": "Worktrees",
 		"autoApprove": "자동 승인",
@@ -701,6 +702,20 @@
 			"step2": "2. 계정으로 인증",
 			"step3": "3. OAuth 자격 증명이 자동으로 저장됩니다",
 			"setupInstructions": "설정 안내"
+		}
+	},
+	"subagents": {
+		"enable": {
+			"label": "서브에이전트 활성화",
+			"description": "활성화하면 전체 도구 모드가 병렬로 실행되는 헤드리스 서브에이전트를 생성할 수 있습니다. 각 서브에이전트는 자체 컨텍스트에서 작업하고 요약만 메인 채팅으로 반환합니다."
+		},
+		"concurrency": {
+			"label": "최대 동시 서브에이전트 수",
+			"description": "동시에 실행할 수 있는 서브에이전트 수입니다. 초과된 실행은 대기열에서 기다립니다."
+		},
+		"maxTurns": {
+			"label": "서브에이전트 기본 최대 턴 수",
+			"description": "정의에 최대 턴 수가 없는 서브에이전트에 적용되는 턴 제한입니다. 제한에 도달한 서브에이전트는 중단하고 부분 요약을 반환합니다."
 		}
 	},
 	"checkpoints": {

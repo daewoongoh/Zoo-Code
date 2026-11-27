@@ -503,5 +503,44 @@
 	"diffView": {
 		"hiddenLines_one": "{{count}} hidden line",
 		"hiddenLines_other": "{{count}} hidden lines"
+	},
+	"subagents": {
+		"groupRunning": "Subagents · {{active}} of {{total}} running",
+		"groupDone": "Subagents · {{completed}} of {{total}} finished",
+		"groupDoneWithFailures": "Subagents · {{completed}} completed · {{failed}} failed",
+		"starting": "Starting...",
+		"queued": "Queued",
+		"completed": "Completed",
+		"failed": "Failed",
+		"cancelled": "Cancelled",
+		"partial": "partial",
+		"cancel": "Cancel subagent",
+		"inspect": "Open transcript",
+		"headerChip": "{{count}} subagent(s) running",
+		"metaTools": "{{count}} tools",
+		"metaRead": "{{count}} read",
+		"metaWritten": "{{count}} written",
+		"worktreeKept": "worktree kept",
+		"worktreeRemoved": "worktree removed",
+		"viewLive": "View live",
+		"liveTitle": "Live transcript",
+		"close": "Close",
+		"loadEarlier": "Load earlier",
+		"noActivity": "No tool activity yet",
+		"liveEnded": "Run finished",
+		"roleUser": "User",
+		"roleAssistant": "Agent",
+		"reasoning": "Reasoning",
+		"result": "Result",
+		"actions": {
+			"readfile": "Read file",
+			"searchfiles": "Search files",
+			"listfiles": "List directory",
+			"codebasesearch": "Search codebase",
+			"executecommand": "Run command",
+			"writetofile": "Write file",
+			"editfile": "Edit file",
+			"completion": "Write final report"
+		}
 	}
 }

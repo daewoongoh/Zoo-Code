@@ -507,5 +507,44 @@
 	},
 	"diffView": {
 		"hiddenLines_other": "숨겨진 줄 {{count}}개"
+	},
+	"subagents": {
+		"groupRunning": "서브에이전트 · {{total}}개 중 {{active}}개 실행 중",
+		"groupDone": "서브에이전트 · {{total}}개 중 {{completed}}개 완료",
+		"groupDoneWithFailures": "서브에이전트 · {{completed}}개 완료 · {{failed}}개 실패",
+		"starting": "시작 중...",
+		"queued": "대기 중",
+		"completed": "완료됨",
+		"failed": "실패함",
+		"cancelled": "취소됨",
+		"partial": "부분 완료",
+		"cancel": "서브에이전트 취소",
+		"inspect": "트랜스크립트 열기",
+		"headerChip": "서브에이전트 {{count}}개 실행 중",
+		"metaTools": "도구 {{count}}개",
+		"metaRead": "읽기 {{count}}개",
+		"metaWritten": "쓰기 {{count}}개",
+		"worktreeKept": "워크트리 유지됨",
+		"worktreeRemoved": "워크트리 삭제됨",
+		"viewLive": "라이브 보기",
+		"liveTitle": "라이브 트랜스크립트",
+		"close": "닫기",
+		"loadEarlier": "이전 항목 불러오기",
+		"noActivity": "아직 툴 활동 없음",
+		"liveEnded": "실행 종료",
+		"roleUser": "사용자",
+		"roleAssistant": "에이전트",
+		"reasoning": "추론",
+		"result": "결과",
+		"actions": {
+			"readfile": "파일 읽기",
+			"searchfiles": "파일 검색",
+			"listfiles": "디렉터리 나열",
+			"codebasesearch": "코드베이스 검색",
+			"executecommand": "명령 실행",
+			"writetofile": "파일 쓰기",
+			"editfile": "파일 편집",
+			"completion": "최종 보고서 작성"
+		}
 	}
 }

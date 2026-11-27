@@ -28,6 +28,7 @@
 	"sections": {
 		"providers": "Providers",
 		"modes": "Modes",
+		"subagents": "Subagents",
 		"mcp": "MCP Servers",
 		"worktrees": "Worktrees",
 		"skills": "Skills",
@@ -775,6 +776,20 @@
 			"step2": "2. Authenticate using your account",
 			"step3": "3. OAuth credentials will be stored automatically",
 			"setupInstructions": "Setup Instructions"
+		}
+	},
+	"subagents": {
+		"enable": {
+			"label": "Enable subagents",
+			"description": "When enabled, full-tool modes can spawn headless subagents that run in parallel. Each subagent works in its own context and returns only a summary to the main chat."
+		},
+		"concurrency": {
+			"label": "Maximum concurrent subagents",
+			"description": "How many subagents may run at the same time. Additional runs wait in a queue."
+		},
+		"maxTurns": {
+			"label": "Default maximum turns per subagent",
+			"description": "Turn limit for subagents whose definition does not set one. A subagent that reaches the limit stops and returns a partial summary."
 		}
 	},
 	"checkpoints": {

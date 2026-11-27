@@ -25,6 +25,8 @@ interface BuildToolsOptions {
 	apiConfiguration: ProviderSettings | undefined
 	disabledTools?: string[]
 	modelInfo?: ModelInfo
+	/** Native subagent tooling is opt-in. */
+	subagentsEnabled?: boolean
 	/**
 	 * If true, returns all tools without mode filtering, but also includes
 	 * the list of allowed tool names for use with allowedFunctionNames.
@@ -88,6 +90,7 @@ export async function buildNativeToolsArrayWithRestrictions(options: BuildToolsO
 		apiConfiguration,
 		disabledTools,
 		modelInfo,
+		subagentsEnabled,
 		includeAllToolsWithRestrictions,
 	} = options
 
@@ -102,6 +105,7 @@ export async function buildNativeToolsArrayWithRestrictions(options: BuildToolsO
 		todoListEnabled: apiConfiguration?.todoListEnabled ?? true,
 		disabledTools,
 		modelInfo,
+		subagentsEnabled,
 	}
 
 	// Check if the model supports images for read_file tool description.
@@ -177,4 +181,34 @@ export async function buildNativeToolsArrayWithRestrictions(options: BuildToolsO
 	return {
 		tools: filteredTools,
 	}
+}
+
+/**
+ * Replaces the `spawn_subagent` description with one that lists the agents
+ * available in this workspace. Only names and one-line descriptions are added,
+ * so the parent's prompt cost stays bounded.
+ */
+export function describeAvailableSubagents(
+	tools: OpenAI.Chat.ChatCompletionTool[],
+	agents: Array<{ name: string; description: string }>,
+): OpenAI.Chat.ChatCompletionTool[] {
+	if (agents.length === 0) {
+		return tools
+	}
+
+	const catalog = agents.map((agent) => `- ${agent.name}: ${agent.description}`).join("\n")
+
+	return tools.map((tool) => {
+		if (!("function" in tool) || tool.function?.name !== "spawn_subagent") {
+			return tool
+		}
+
+		return {
+			...tool,
+			function: {
+				...tool.function,
+				description: `${tool.function.description}\n\nAvailable agents:\n${catalog}`,
+			},
+		}
+	})
 }

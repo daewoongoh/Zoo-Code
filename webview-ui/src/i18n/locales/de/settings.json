@@ -704,6 +704,20 @@
 			"setupInstructions": "Einrichtungsanleitung"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Subagenten aktivieren",
+			"description": "Wenn aktiviert, können Vollwerkzeug-Modi headless Subagenten erzeugen, die parallel laufen. Jeder Subagent arbeitet in seinem eigenen Kontext und gibt nur eine Zusammenfassung an den Hauptchat zurück."
+		},
+		"concurrency": {
+			"label": "Maximale gleichzeitige Subagenten",
+			"description": "Wie viele Subagenten gleichzeitig laufen dürfen. Weitere Läufe warten in einer Warteschlange."
+		},
+		"maxTurns": {
+			"label": "Standardmäßige maximale Turns pro Subagent",
+			"description": "Turn-Limit für Subagenten, deren Definition kein Limit festlegt. Ein Subagent, der das Limit erreicht, stoppt und gibt eine Teilzusammenfassung."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Timeout für Checkpoint-Initialisierung (Sekunden)",

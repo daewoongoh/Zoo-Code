@@ -508,5 +508,44 @@
 	},
 	"diffView": {
 		"hiddenLines_other": "已隐藏 {{count}} 行"
+	},
+	"subagents": {
+		"groupRunning": "子代理 · 共{{total}}个，正在运行{{active}}个",
+		"groupDone": "子代理 · 共{{total}}个，已完成{{completed}}个",
+		"groupDoneWithFailures": "子代理 · {{completed}}个已完成 · {{failed}}个失败",
+		"starting": "正在启动...",
+		"queued": "等待中",
+		"completed": "已完成",
+		"failed": "失败",
+		"cancelled": "已取消",
+		"partial": "部分完成",
+		"cancel": "取消子代理",
+		"inspect": "打开记录",
+		"headerChip": "{{count}}个子代理正在运行",
+		"metaTools": "{{count}}个工具",
+		"metaRead": "{{count}}次读取",
+		"metaWritten": "{{count}}次写入",
+		"worktreeKept": "工作树已保留",
+		"worktreeRemoved": "工作树已删除",
+		"viewLive": "实时查看",
+		"liveTitle": "实时记录",
+		"close": "关闭",
+		"loadEarlier": "加载更早内容",
+		"noActivity": "暂无工具活动",
+		"liveEnded": "运行已结束",
+		"roleUser": "用户",
+		"roleAssistant": "代理",
+		"reasoning": "推理",
+		"result": "结果",
+		"actions": {
+			"readfile": "读取文件",
+			"searchfiles": "搜索文件",
+			"listfiles": "列出目录",
+			"codebasesearch": "搜索代码库",
+			"executecommand": "运行命令",
+			"writetofile": "写入文件",
+			"editfile": "编辑文件",
+			"completion": "编写最终报告"
+		}
 	}
 }

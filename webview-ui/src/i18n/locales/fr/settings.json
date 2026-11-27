@@ -705,6 +705,20 @@
 			"setupInstructions": "Instructions de configuration"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Activer les sous-agents",
+			"description": "Lorsqu'elle est activée, les modes pleins outils peuvent générer des sous-agents headless qui s'exécutent en parallèle. Chaque sous-agent travaille dans son propre contexte et ne renvoie qu'un résumé au chat principal."
+		},
+		"concurrency": {
+			"label": "Nombre maximal de sous-agents simultanés",
+			"description": "Combien de sous-agents peuvent s'exécuter en même temps. Les exécutions supplémentaires attendent dans une file."
+		},
+		"maxTurns": {
+			"label": "Tours maximum par défaut par sous-agent",
+			"description": "Limite de tours pour les sous-agents dont la définition n'en fixe pas. Un sous-agent qui atteint la limite s'arrête et renvoie un résumé partiel."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Délai d'initialisation du point de contrôle (secondes)",

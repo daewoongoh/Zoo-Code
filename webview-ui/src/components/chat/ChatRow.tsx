@@ -47,6 +47,7 @@ import { BatchDiffApproval } from "./BatchDiffApproval"
 import { ProgressIndicator } from "./ProgressIndicator"
 import { Markdown } from "./Markdown"
 import { CommandExecution } from "./CommandExecution"
+import { SubagentGroupCard } from "./SubagentGroupCard"
 import { CommandExecutionError } from "./CommandExecutionError"
 import { AutoApprovedRequestLimitWarning } from "./AutoApprovedRequestLimitWarning"
 import { InProgressRow, CondensationResultRow, CondensationErrorRow, TruncationResultRow } from "./context-management"
@@ -1492,6 +1493,15 @@ export const ChatRowContent = ({
 					if (!sayTool) return null
 
 					switch (sayTool.tool) {
+						case "spawnSubagent": {
+							// Every spawn of a turn shares a group id; only the leader
+							// row (the first spawn) renders the group card.
+							if (!sayTool.groupId || sayTool.runId !== sayTool.groupId) {
+								return null
+							}
+
+							return <SubagentGroupCard groupId={sayTool.groupId} initialRuns={sayTool.runs} />
+						}
 						case "runSlashCommand": {
 							const slashCommandInfo = sayTool
 							return (

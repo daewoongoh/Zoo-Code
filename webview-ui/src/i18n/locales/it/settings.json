@@ -705,6 +705,20 @@
 			"setupInstructions": "Istruzioni di configurazione"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Abilita sottoagenti",
+			"description": "Se abilitata, le modalità complete possono generare sottoagenti headless che girano in parallelo. Ogni sottoagente lavora nel proprio contesto e restituisce solo un riepilogo alla chat principale."
+		},
+		"concurrency": {
+			"label": "Massimo sottoagenti concorrenti",
+			"description": "Quanti sottoagenti possono girare contemporaneamente. Le esecuzioni aggiuntive attendono in coda."
+		},
+		"maxTurns": {
+			"label": "Turni massimi predefiniti per sottoagente",
+			"description": "Limite di turni per sottoagenti la cui definizione non ne imposta uno. Un sottoagente che raggiunge il limite si ferma e restituisce un riepilogo parziale."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Timeout inizializzazione checkpoint (secondi)",

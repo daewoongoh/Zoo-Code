@@ -106,6 +106,13 @@ export const toolParamNames = [
 	"timeout", // execute_command parameter
 	"artifact_id", // read_command_output parameter
 	"search", // read_command_output parameter for grep-like search
+	// spawn_subagent parameters
+	"agent",
+	"description",
+	"prompt",
+	"model",
+	"isolation",
+	"run_id",
 	"offset", // read_command_output and read_file parameter
 	"limit", // read_command_output and read_file parameter
 	// read_file indentation mode parameters
@@ -146,6 +153,13 @@ export type NativeToolArgs = {
 	}
 	codebase_search: { query: string; path?: string }
 	generate_image: GenerateImageParams
+	spawn_subagent: {
+		agent: string
+		description: string
+		prompt: string
+		model?: string
+		isolation?: "none" | "worktree"
+	}
 	run_slash_command: { command: string; args?: string }
 	skill: { skill: string; args?: string }
 	search_files: { path: string; regex: string; file_pattern?: string | null }
@@ -226,7 +240,7 @@ export const TOOL_GROUPS: Record<ToolGroup, ToolGroupConfig> = {
 		tools: ["use_mcp_tool", "access_mcp_resource"],
 	},
 	modes: {
-		tools: ["switch_mode", "new_task"],
+		tools: ["switch_mode", "new_task", "spawn_subagent"],
 		alwaysAvailable: true,
 	},
 }
@@ -240,6 +254,7 @@ export const ALWAYS_AVAILABLE_TOOLS: ToolName[] = [
 	"update_todo_list",
 	"run_slash_command",
 	"skill",
+	"spawn_subagent",
 ] as const
 
 /**

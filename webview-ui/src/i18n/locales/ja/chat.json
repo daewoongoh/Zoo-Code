@@ -507,5 +507,44 @@
 	},
 	"diffView": {
 		"hiddenLines_other": "{{count}} 行が非表示"
+	},
+	"subagents": {
+		"groupRunning": "サブエージェント · {{total}}件中{{active}}件実行中",
+		"groupDone": "サブエージェント · {{total}}件中{{completed}}件完了",
+		"groupDoneWithFailures": "サブエージェント · {{completed}}件完了 · {{failed}}件失敗",
+		"starting": "起動中...",
+		"queued": "待機中",
+		"completed": "完了",
+		"failed": "失敗",
+		"cancelled": "キャンセル",
+		"partial": "部分的",
+		"cancel": "サブエージェントをキャンセル",
+		"inspect": "トランスクリプトを開く",
+		"headerChip": "{{count}}個のサブエージェントが実行中",
+		"metaTools": "ツール{{count}}件",
+		"metaRead": "読み取り{{count}}件",
+		"metaWritten": "書き込み{{count}}件",
+		"worktreeKept": "ワークツリーを保持",
+		"worktreeRemoved": "ワークツリーを削除",
+		"viewLive": "ライブで見る",
+		"liveTitle": "ライブトランスクリプト",
+		"close": "閉じる",
+		"loadEarlier": "以前を読み込む",
+		"noActivity": "ツールのアクティビティはまだありません",
+		"liveEnded": "実行が終了しました",
+		"roleUser": "ユーザー",
+		"roleAssistant": "エージェント",
+		"reasoning": "推論",
+		"result": "結果",
+		"actions": {
+			"readfile": "ファイルを読む",
+			"searchfiles": "ファイルを検索",
+			"listfiles": "ディレクトリを一覧",
+			"codebasesearch": "コードベースを検索",
+			"executecommand": "コマンドを実行",
+			"writetofile": "ファイルを書く",
+			"editfile": "ファイルを編集",
+			"completion": "最終レポートを書く"
+		}
 	}
 }

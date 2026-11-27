@@ -34,6 +34,9 @@ vi.mock("../../tools/AttemptCompletionTool", () => ({
 vi.mock("../../tools/AskFollowupQuestionTool", () => ({
 	askFollowupQuestionTool: { handle: vi.fn().mockResolvedValue(undefined) },
 }))
+vi.mock("../../tools/NewTaskTool", () => ({
+	newTaskTool: { handle: vi.fn().mockResolvedValue(undefined) },
+}))
 
 // presentAssistantMessage records tool usage through TelemetryService.instance.
 vi.mock("@roo-code/telemetry", () => ({
@@ -47,6 +50,7 @@ vi.mock("@roo-code/telemetry", () => ({
 }))
 
 import { customToolRegistry } from "@roo-code/core"
+import { newTaskTool } from "../../tools/NewTaskTool"
 
 // The snapshot the presenter consumes; the getState doubles below deliberately
 // disagree with it so any surviving live-read re-entry is caught by assertions.
@@ -1079,6 +1083,44 @@ describe("presentAssistantMessage - Custom Tool Recording", () => {
 
 			// Should not record usage for partial blocks
 			expect(mockTask.recordToolUsage).not.toHaveBeenCalled()
+		})
+	})
+
+	describe("Subagent hierarchy", () => {
+		it("rejects new_task from a headless subagent instead of delegating", async () => {
+			mockTask.subagent = {
+				runId: "run-1",
+				groupId: "group-1",
+				definition: {
+					name: "explore",
+					description: "Explores",
+					systemPrompt: "Explore.",
+					source: "builtin",
+				},
+			}
+			mockTask.assistantMessageContent = [
+				{
+					type: "tool_use",
+					id: "tool_call_delegate",
+					name: "new_task",
+					params: { mode: "code", message: "Do more work" },
+					partial: false,
+				},
+			]
+
+			await presentAssistantMessage(mockTask, baseSnapshot)
+
+			expect(newTaskTool.handle).not.toHaveBeenCalled()
+			expect(mockTask.userMessageContent).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						type: "tool_result",
+						tool_use_id: "tool_call_delegate",
+						is_error: true,
+						content: expect.stringContaining("not available to a subagent"),
+					}),
+				]),
+			)
 		})
 	})
 })

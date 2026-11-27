@@ -704,6 +704,20 @@
 			"setupInstructions": "Installatie-instructies"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Subagenten inschakelen",
+			"description": "Indien ingeschakeld kunnen volledige-toolmodi headless subagenten maken die parallel draaien. Elke subagent werkt in eigen context en geeft alleen een samenvatting terug aan de hoofdchat."
+		},
+		"concurrency": {
+			"label": "Maximale gelijktijdige subagenten",
+			"description": "Hoeveel subagenten er tegelijk mogen draaien. Extra runs wachten in een wachtrij."
+		},
+		"maxTurns": {
+			"label": "Standaard maximale beurten per subagent",
+			"description": "Beurtenlimiet voor subagenten waarvan de definitie er geen heeft. Een subagent die de limiet bereikt stopt en geeft een gedeeltelijke samenvatting."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Timeout voor checkpoint-initialisatie (seconden)",

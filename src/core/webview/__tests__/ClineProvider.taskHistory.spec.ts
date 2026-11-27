@@ -1320,4 +1320,36 @@ describe("ClineProvider Task History Synchronization", () => {
 			},
 		)
 	})
+
+	describe("deleteTaskWithId", () => {
+		it("deletes hidden subagent transcripts owned by the deleted task", async () => {
+			await provider.updateTaskHistory(createHistoryItem({ id: "agent-parent", task: "Parent" }), {
+				broadcast: false,
+			})
+			await provider.updateTaskHistory(
+				createHistoryItem({
+					id: "agent-run",
+					task: "Subagent run",
+					parentTaskId: "agent-parent",
+					subagent: {
+						runId: "agent-run",
+						groupId: "agent-run",
+						parentTaskId: "agent-parent",
+						agentName: "explore",
+						status: "completed",
+					},
+				}),
+				{ broadcast: false },
+			)
+
+			vi.spyOn(ShadowCheckpointService, "deleteTask").mockResolvedValue(undefined)
+			const deleteMany = vi.spyOn(provider.taskHistoryStore, "deleteMany")
+
+			await provider.deleteTaskWithId("agent-parent")
+
+			expect(deleteMany).toHaveBeenCalledOnce()
+			expect(deleteMany.mock.calls[0]?.[0]).toEqual(expect.arrayContaining(["agent-parent", "agent-run"]))
+			expect(provider.taskHistoryStore.get("agent-run")).toBeUndefined()
+		})
+	})
 })

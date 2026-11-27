@@ -703,6 +703,20 @@
 			"setupInstructions": "Petunjuk penyiapan"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Aktifkan subagen",
+			"description": "Saat diaktifkan, mode tool lengkap dapat membuat subagen headless yang berjalan paralel. Setiap subagen bekerja dalam konteksnya sendiri dan hanya mengembalikan ringkasan ke obrolan utama."
+		},
+		"concurrency": {
+			"label": "Subagen bersamaan maksimum",
+			"description": "Berapa banyak subagen yang dapat berjalan sekaligus. Jalur tambahan menunggu dalam antrean."
+		},
+		"maxTurns": {
+			"label": "Putaran maksimum default per subagen",
+			"description": "Batas putaran untuk subagen yang definisinya tidak menetapkannya. Subagen yang mencapai batas berhenti dan mengembalikan ringkasan parsial."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Batas waktu inisialisasi checkpoint (detik)",

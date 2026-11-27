@@ -29,6 +29,7 @@ import {
 	GitCommitVertical,
 	GraduationCap,
 	ScrollText,
+	Bot,
 } from "lucide-react"
 
 import {
@@ -40,6 +41,8 @@ import {
 	DEFAULT_AUTO_CLOSE_ZOO_OPENED_NEW_FILES,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	DEFAULT_TASK_TITLE_GENERATION_ENABLED,
+	DEFAULT_MAX_CONCURRENT_SUBAGENTS,
+	DEFAULT_SUBAGENT_MAX_TURNS,
 	ImageGenerationProvider,
 } from "@roo-code/types"
 
@@ -73,6 +76,7 @@ import { AutoApproveSettings } from "./AutoApproveSettings"
 import { CheckpointSettings } from "./CheckpointSettings"
 import { NotificationSettings } from "./NotificationSettings"
 import { ContextManagementSettings } from "./ContextManagementSettings"
+import { SubagentSettings } from "./SubagentSettings"
 import { TerminalSettings } from "./TerminalSettings"
 import { ExperimentalSettings } from "./ExperimentalSettings"
 import { LanguageSettings } from "./LanguageSettings"
@@ -119,6 +123,7 @@ export const sectionNames = [
 	"contextManagement",
 	"terminal",
 	"modes",
+	"subagents",
 	"mcp",
 	"worktrees",
 	"prompts",
@@ -241,6 +246,9 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		autoCloseZooOpenedFiles,
 		autoCloseZooOpenedFilesAfterUserEdited,
 		autoCloseZooOpenedNewFiles,
+		subagentsEnabled,
+		maxConcurrentSubagents,
+		defaultSubagentMaxTurns,
 	} = cachedState
 
 	const apiConfiguration = cachedState.apiConfiguration
@@ -489,6 +497,9 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 					autoCloseZooOpenedFilesAfterUserEdited:
 						autoCloseZooOpenedFilesAfterUserEdited ?? DEFAULT_AUTO_CLOSE_ZOO_OPENED_FILES_AFTER_USER_EDITED,
 					autoCloseZooOpenedNewFiles: autoCloseZooOpenedNewFiles ?? DEFAULT_AUTO_CLOSE_ZOO_OPENED_NEW_FILES,
+					subagentsEnabled: subagentsEnabled ?? false,
+					maxConcurrentSubagents: maxConcurrentSubagents ?? DEFAULT_MAX_CONCURRENT_SUBAGENTS,
+					defaultSubagentMaxTurns: defaultSubagentMaxTurns ?? DEFAULT_SUBAGENT_MAX_TURNS,
 					profileThresholds,
 					imageGenerationProvider,
 					openRouterImageApiKey,
@@ -608,6 +619,7 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 		() => [
 			{ id: "providers", icon: Plug },
 			{ id: "modes", icon: UsersRound },
+			{ id: "subagents", icon: Bot },
 			{ id: "skills", icon: GraduationCap },
 			{ id: "slashCommands", icon: SquareSlash },
 			{ id: "rules", icon: ScrollText },
@@ -978,6 +990,16 @@ const SettingsView = forwardRef<SettingsViewRef, SettingsViewProps>(({ onDone, t
 
 						{/* Modes Section */}
 						{renderTab === "modes" && <ModesView />}
+
+						{/* Subagents Section */}
+						{renderTab === "subagents" && (
+							<SubagentSettings
+								subagentsEnabled={subagentsEnabled}
+								maxConcurrentSubagents={maxConcurrentSubagents}
+								defaultSubagentMaxTurns={defaultSubagentMaxTurns}
+								setCachedStateField={setCachedStateField}
+							/>
+						)}
 
 						{/* MCP Section */}
 						{renderTab === "mcp" && (

@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { todoItemSchema } from "./todo.js"
+import { subagentHistoryMetaSchema } from "./subagent.js"
 
 /**
  * HistoryItem
@@ -51,6 +52,8 @@ export const historyItemSchema = z.object({
 	completedByChildId: z.string().optional(), // Child that completed and resumed this parent
 	completionResultSummary: z.string().optional(), // Summary from completed child
 	pendingAction: pendingTaskActionSchema.optional(),
+	/** Present when this history entry belongs to a headless subagent run. */
+	subagent: subagentHistoryMetaSchema.optional(),
 })
 
 export type HistoryItem = z.infer<typeof historyItemSchema>

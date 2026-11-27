@@ -158,6 +158,8 @@ export interface EffectiveToolPolicyInput {
 	 * `access_mcp_resource` based on resources from disallowed servers.
 	 */
 	allowedMcpServers?: string[]
+	/** Native subagent tooling is opt-in; a false/absent value removes `spawn_subagent`. */
+	subagentsEnabled?: boolean
 }
 
 export interface EffectiveToolPolicy {
@@ -252,6 +254,7 @@ export function resolveEffectiveToolPolicy(input: EffectiveToolPolicyInput): Eff
 		todoListEnabled,
 		codeIndexManager,
 		allowedMcpServers,
+		subagentsEnabled,
 	} = input
 
 	// A disabledTools entry naming a protocol tool carries no disabling weight;
@@ -349,6 +352,13 @@ export function resolveEffectiveToolPolicy(input: EffectiveToolPolicyInput): Eff
 	const hasMcpTools = resolveHasMcpTools(mcpHub, effectiveAllowedMcpServers)
 	if (!hasMcpTools) {
 		allowedToolNames.delete("use_mcp_tool")
+	}
+
+	// 10b. Drop spawn_subagent unless the feature is enabled. A disabledTools
+	//      entry can also remove it (step 9), but the feature flag is the
+	//      primary gate for every mode, including custom modes.
+	if (subagentsEnabled !== true) {
+		allowedToolNames.delete("spawn_subagent")
 	}
 
 	// 11. Protocol guarantee: re-add every protocol tool that the effective

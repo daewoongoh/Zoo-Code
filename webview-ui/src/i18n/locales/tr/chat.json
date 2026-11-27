@@ -516,5 +516,44 @@
 	"diffView": {
 		"hiddenLines_one": "{{count}} gizli satır",
 		"hiddenLines_other": "{{count}} gizli satır"
+	},
+	"subagents": {
+		"groupRunning": "Alt ajanlar · {{total}} üzerinden {{active}} çalışıyor",
+		"groupDone": "Alt ajanlar · {{total}} üzerinden {{completed}} tamamlandı",
+		"groupDoneWithFailures": "Alt ajanlar · {{completed}} tamamlandı · {{failed}} başarısız",
+		"starting": "Başlatılıyor...",
+		"queued": "Sırada",
+		"completed": "Tamamlandı",
+		"failed": "Başarısız",
+		"cancelled": "İptal edildi",
+		"partial": "kısmi",
+		"cancel": "Alt ajanı iptal et",
+		"inspect": "Dökümü aç",
+		"headerChip": "{{count}} alt ajan çalışıyor",
+		"metaTools": "{{count}} araç",
+		"metaRead": "{{count}} okuma",
+		"metaWritten": "{{count}} yazma",
+		"worktreeKept": "worktree korundu",
+		"worktreeRemoved": "worktree kaldırıldı",
+		"viewLive": "Canlı izle",
+		"liveTitle": "Canlı döküm",
+		"close": "Kapat",
+		"loadEarlier": "Daha öncekileri yükle",
+		"noActivity": "Henüz araç etkinliği yok",
+		"liveEnded": "Çalıştırma sona erdi",
+		"roleUser": "Kullanıcı",
+		"roleAssistant": "Ajan",
+		"reasoning": "Gerekçe",
+		"result": "Sonuç",
+		"actions": {
+			"readfile": "Dosya oku",
+			"searchfiles": "Dosya ara",
+			"listfiles": "Dizini listele",
+			"codebasesearch": "Kodda ara",
+			"executecommand": "Komut çalıştır",
+			"writetofile": "Dosya yaz",
+			"editfile": "Dosyayı düzenle",
+			"completion": "Son raporu yaz"
+		}
 	}
 }

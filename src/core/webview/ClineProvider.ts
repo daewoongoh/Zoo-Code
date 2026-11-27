@@ -71,6 +71,8 @@ import {
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_MODES,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
+	DEFAULT_MAX_CONCURRENT_SUBAGENTS,
+	DEFAULT_SUBAGENT_MAX_TURNS,
 	getModelId,
 	isRetiredProvider,
 	modelIdKeys,
@@ -137,6 +139,8 @@ import { withoutInvalidDisplaySettings } from "../config/displaySettings"
 import { ProviderSettingsManager } from "../config/ProviderSettingsManager"
 import { CustomModesManager } from "../config/CustomModesManager"
 import { PendingActionSettlementError, Task } from "../task/Task"
+import { SubagentManager } from "../subagents/SubagentManager"
+import { SubagentRegistry } from "../subagents/SubagentRegistry"
 
 import { webviewMessageHandler } from "./webviewMessageHandler"
 import type { WebviewFocusTracker } from "./WebviewFocusTracker"
@@ -330,6 +334,10 @@ export class ClineProvider
 
 	private recentTasksCache?: string[]
 	public readonly taskHistoryStore: TaskHistoryStore
+
+	/** Lazily created native-subagent registry and run manager for this window. */
+	private subagentRegistryInstance?: SubagentRegistry
+	private subagentManagerInstance?: SubagentManager
 	private readonly taskTitleService: TaskTitleService
 	private taskHistoryStoreInitialized = false
 	public static readonly PENDING_OPERATION_TIMEOUT_MS = 30000 // 30 seconds
@@ -1061,6 +1069,10 @@ export class ClineProvider
 		await this.marketplaceManager?.cleanup()
 		this.customModesManager?.dispose()
 		this.taskTitleService.dispose()
+		this.subagentManagerInstance?.dispose()
+		this.subagentManagerInstance = undefined
+		this.subagentRegistryInstance?.dispose()
+		this.subagentRegistryInstance = undefined
 		this.taskHistoryStore.dispose()
 		this.log("Disposed all disposables")
 		ClineProvider.activeInstances.delete(this)
@@ -2984,6 +2996,26 @@ export class ClineProvider
 				await collectChildIds(id)
 			}
 
+			// Hidden subagent transcripts are stored as history rows owned by the
+			// task that spawned them. They are not delegated children, so collect
+			// them separately to avoid orphaning their rows and directories.
+			const deleting = new Set(allIdsToDelete)
+
+			for (const item of this.taskHistoryStore.getAll()) {
+				const parentTaskId = item.subagent?.parentTaskId
+
+				if (parentTaskId && deleting.has(parentTaskId) && !deleting.has(item.id)) {
+					deleting.add(item.id)
+					allIdsToDelete.push(item.id)
+				}
+			}
+
+			// Stop any child that is still running; its storage disappears below.
+			for (const taskId of allIdsToDelete) {
+				this.subagentManagerInstance?.cancelAllForParent(taskId)
+				this.subagentManagerInstance?.clearStateForParent(taskId)
+			}
+
 			// Remove from stack if any of the tasks to delete are in the current task stack
 			for (const taskId of allIdsToDelete) {
 				if (taskId === this.getCurrentTask()?.taskId) {
@@ -3274,6 +3306,9 @@ export class ClineProvider
 			maxOpenTabsContext,
 			maxWorkspaceFiles,
 			disabledTools,
+			subagentsEnabled,
+			maxConcurrentSubagents,
+			defaultSubagentMaxTurns,
 			telemetrySetting,
 			showRooIgnoredFiles,
 			enableSubfolderRules,
@@ -3416,7 +3451,7 @@ export class ClineProvider
 			currentTaskTodos: currentTask?.todoList || [],
 			messageQueue: currentTask?.messageQueueService?.messages,
 			taskHistory: includeTaskHistory
-				? this.taskHistoryStore.getAll().filter((item: HistoryItem) => item.ts && item.task)
+				? this.getVisibleTaskHistory().filter((item: HistoryItem) => item.ts && item.task)
 				: [],
 			soundEnabled: soundEnabled ?? false,
 			ttsEnabled: ttsEnabled ?? false,
@@ -3457,6 +3492,9 @@ export class ClineProvider
 			maxWorkspaceFiles: maxWorkspaceFiles ?? 200,
 			cwd,
 			disabledTools,
+			subagentsEnabled: subagentsEnabled ?? false,
+			maxConcurrentSubagents: maxConcurrentSubagents ?? DEFAULT_MAX_CONCURRENT_SUBAGENTS,
+			defaultSubagentMaxTurns: defaultSubagentMaxTurns ?? DEFAULT_SUBAGENT_MAX_TURNS,
 			telemetrySetting,
 			telemetryKey,
 			machineId,
@@ -3661,7 +3699,7 @@ export class ClineProvider
 			allowedMaxCost: stateValues.allowedMaxCost,
 			autoCondenseContext: stateValues.autoCondenseContext ?? true,
 			autoCondenseContextPercent: stateValues.autoCondenseContextPercent ?? 100,
-			taskHistory: includeTaskHistory ? this.taskHistoryStore.getAll() : [],
+			taskHistory: includeTaskHistory ? this.getVisibleTaskHistory() : [],
 			allowedCommands: stateValues.allowedCommands,
 			deniedCommands: stateValues.deniedCommands,
 			soundEnabled: stateValues.soundEnabled ?? false,
@@ -3701,6 +3739,9 @@ export class ClineProvider
 			maxOpenTabsContext: stateValues.maxOpenTabsContext ?? 20,
 			maxWorkspaceFiles: stateValues.maxWorkspaceFiles ?? 200,
 			disabledTools: stateValues.disabledTools,
+			subagentsEnabled: stateValues.subagentsEnabled ?? false,
+			maxConcurrentSubagents: stateValues.maxConcurrentSubagents ?? DEFAULT_MAX_CONCURRENT_SUBAGENTS,
+			defaultSubagentMaxTurns: stateValues.defaultSubagentMaxTurns ?? DEFAULT_SUBAGENT_MAX_TURNS,
 			telemetrySetting: stateValues.telemetrySetting || "unset",
 			showRooIgnoredFiles: stateValues.showRooIgnoredFiles ?? false,
 			enableSubfolderRules: stateValues.enableSubfolderRules ?? false,
@@ -3807,13 +3848,21 @@ export class ClineProvider
 
 		// Sort and filter the history the same way as getStateToPostToWebview
 		const sortedHistory = taskHistory
-			.filter((item: HistoryItem) => item.ts && item.task)
+			.filter((item: HistoryItem) => !item.subagent && item.ts && item.task)
 			.sort((a: HistoryItem, b: HistoryItem) => b.ts - a.ts)
 
 		await this.postMessageToWebview({
 			type: "taskHistoryUpdated",
 			taskHistory: sortedHistory,
 		})
+	}
+
+	/**
+	 * History rows the user sees. A headless subagent transcript stays on disk
+	 * for the inspector, but it is not a user task and never joins the list.
+	 */
+	private getVisibleTaskHistory(): HistoryItem[] {
+		return this.taskHistoryStore.getAll().filter((item) => !item.subagent)
 	}
 
 	// ContextProxy
@@ -4353,6 +4402,10 @@ export class ClineProvider
 		const workspaceTasks: HistoryItem[] = []
 
 		for (const item of history) {
+			if (item.subagent) {
+				continue
+			}
+
 			if (!item.ts || !item.task || item.workspace !== this.cwd) {
 				continue
 			}
@@ -4504,6 +4557,39 @@ export class ClineProvider
 		return task
 	}
 
+	/**
+	 * Returns the workspace's subagent registry, creating it on first use.
+	 * Builtins are available synchronously; project and user agent files load
+	 * in the background and replace builtins as they arrive.
+	 */
+	public getSubagentRegistry(): SubagentRegistry {
+		if (!this.subagentRegistryInstance) {
+			const cwd = this.currentWorkspacePath || getWorkspacePath() || process.cwd()
+			const registry = new SubagentRegistry({
+				cwd,
+				onWarning: (message) => this.log(`[subagents] ${message}`),
+			})
+			this.subagentRegistryInstance = registry
+			void registry.load().catch((error) => {
+				this.log(
+					`[subagents] failed to load agent definitions: ${error instanceof Error ? error.message : String(error)}`,
+				)
+			})
+		}
+
+		return this.subagentRegistryInstance
+	}
+
+	/** Returns this window's subagent run manager, creating it on first use. */
+	public getSubagentManager(): SubagentManager {
+		this.subagentManagerInstance ??= new SubagentManager({
+			provider: this,
+			log: (message) => this.log(message),
+		})
+
+		return this.subagentManagerInstance
+	}
+
 	public async cancelTask(): Promise<void> {
 		const task = this.getCurrentTask()
 
@@ -4537,6 +4623,9 @@ export class ClineProvider
 
 		// Mark this as a user-initiated cancellation so provider-only rehydration can occur
 		task.setAbortReason("user_cancelled")
+
+		// Stop every headless child of this task before the parent unwinds.
+		this.getSubagentManager().cancelAllForParent(task.taskId)
 
 		// Capture the current instance to detect if rehydrate already occurred elsewhere
 		const originalInstanceId = task.instanceId

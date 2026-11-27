@@ -8,6 +8,7 @@ import type { Experiments } from "./experiment.js"
 import type { ClineMessage, MentionSegment, QueuedMessage } from "./message.js"
 import type { MarketplaceItem, MarketplaceInstalledMetadata, InstallMarketplaceItemOptions } from "./marketplace.js"
 import type { TodoItem } from "./todo.js"
+import type { SubagentRunSnapshot, SubagentTranscriptMessage, SubagentUpdatePayload } from "./subagent.js"
 import type { CloudUserInfo, CloudOrganizationMembership, OrganizationAllowList, ShareVisibility } from "./cloud.js"
 import type { SerializedCustomToolDefinition } from "./custom-tool.js"
 import type { GitCommit } from "./git.js"
@@ -143,6 +144,8 @@ export interface ExtensionMessage {
 		| "rooHistoryImportProgress"
 		| "themeFixtureProbeRequest"
 		| "diagnosticsRequest"
+		| "subagentUpdate"
+		| "subagentTranscriptChunk"
 	text?: string
 	/** For fileContent: { path, content, error? } */
 	fileContent?: { path: string; content: string | null; error?: string }
@@ -303,6 +306,10 @@ export interface ExtensionMessage {
 	copyProgressItemName?: string
 	// folderSelected
 	path?: string
+	/** Throttled subagent group progress (JSON `SubagentUpdatePayload` in `text`). */
+	subagentUpdate?: SubagentUpdatePayload
+	/** One message of a subagent live transcript for the dedicated viewer. */
+	subagentTranscriptChunk?: SubagentTranscriptMessage
 }
 
 export interface OpenAiCodexRateLimitsMessage {
@@ -386,6 +393,9 @@ export type ExtensionState = Pick<
 	| "requestDelaySeconds"
 	| "showWorktreesInHomeScreen"
 	| "disabledTools"
+	| "subagentsEnabled"
+	| "maxConcurrentSubagents"
+	| "defaultSubagentMaxTurns"
 > & {
 	lockApiConfigAcrossModes?: boolean
 	version: string
@@ -758,8 +768,18 @@ export interface WebviewMessage {
 		| "openRulesDirectory"
 		| "themeFixtureProbeResponse"
 		| "diagnosticsResponse"
+		// Native subagents
+		| "cancelSubagent"
+		| "inspectSubagentTranscript"
+		| "requestSubagentTranscript"
+		| "setSubagentLiveViewer"
 	text?: string
 	taskId?: string
+	/** Native subagents: target run and inspector preference. */
+	runId?: string
+	openInTab?: boolean
+	/** Native subagents: open (true) or close (false) the live transcript viewer. */
+	open?: boolean
 	editedMessageContent?: string
 	tab?: "settings" | "history" | "mcp" | "modes" | "chat" | "marketplace" | "cloud"
 	disabled?: boolean
@@ -964,6 +984,8 @@ export interface ClineSayTool {
 		| "runSlashCommand"
 		| "updateTodoList"
 		| "skill"
+		/** Inline parallel subagent group row (payload fields below). */
+		| "spawnSubagent"
 	path?: string
 	// For readCommandOutput
 	readStart?: number
@@ -1023,6 +1045,14 @@ export interface ClineSayTool {
 	description?: string
 	// Properties for skill tool
 	skill?: string
+	// Properties for spawnSubagent tool rows
+	runId?: string
+	groupId?: string
+	agentName?: string
+	modelId?: string
+	runStatus?: string
+	/** Final run snapshots stored on the leader row for reload rendering. */
+	runs?: SubagentRunSnapshot[]
 }
 
 export interface ClineAskUseMcpServer {

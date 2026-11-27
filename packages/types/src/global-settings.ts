@@ -12,6 +12,7 @@ import {
 } from "./provider-settings.js"
 import { telemetrySettingsSchema } from "./telemetry.js"
 import { toolNamesSchema } from "./tool.js"
+import { MAX_CONCURRENT_SUBAGENTS, MAX_SUBAGENT_MAX_TURNS, MIN_CONCURRENT_SUBAGENTS } from "./subagent.js"
 import { type Keys } from "./type-fu.js"
 import { languagesSchema } from "./vscode.js"
 import { providerIdentifiers } from "./provider-identifiers.js"
@@ -334,6 +335,27 @@ export const globalSettingsSchema = z.object({
 	 * ignored at policy resolution.
 	 */
 	disabledTools: z.array(toolNamesSchema).optional(),
+
+	/**
+	 * Enable the native `spawn_subagent` tool for full-tool modes.
+	 * @default false
+	 */
+	subagentsEnabled: z.boolean().optional(),
+	/**
+	 * Maximum number of subagent runs executing at the same time per provider.
+	 * @default 4
+	 */
+	maxConcurrentSubagents: z
+		.number()
+		.int()
+		.min(MIN_CONCURRENT_SUBAGENTS)
+		.max(MAX_CONCURRENT_SUBAGENTS)
+		.optional(),
+	/**
+	 * Default `maxTurns` for subagents whose definition does not set one.
+	 * @default 15
+	 */
+	defaultSubagentMaxTurns: z.number().int().min(1).max(MAX_SUBAGENT_MAX_TURNS).optional(),
 })
 
 export type GlobalSettings = z.infer<typeof globalSettingsSchema>

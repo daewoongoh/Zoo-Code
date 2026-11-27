@@ -1067,6 +1067,30 @@ export class NativeToolCallParser {
 					}
 					break
 
+				// Without a dedicated case, spawn_subagent fell through to the
+				// default branch (non-custom tools), so its arguments were always
+				// rejected and every call became "missing nativeArgs".
+				case "spawn_subagent":
+					if (args.agent !== undefined && args.description !== undefined && args.prompt !== undefined) {
+						nativeArgs = {
+							agent: args.agent,
+							description: args.description,
+							prompt: args.prompt,
+							model: args.model,
+							isolation: args.isolation,
+						} as NativeArgsFor<TName>
+					} else {
+						console.warn(
+							`[spawn_subagent] model returned arguments missing required fields: ` +
+								JSON.stringify({
+									agent: args.agent,
+									description: args.description,
+									prompt: args.prompt,
+								}),
+						)
+					}
+					break
+
 				default:
 					if (customToolRegistry.has(resolvedName)) {
 						nativeArgs = args as NativeArgsFor<TName>

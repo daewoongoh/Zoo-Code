@@ -508,5 +508,44 @@
 	},
 	"diffView": {
 		"hiddenLines_other": "{{count}} dòng bị ẩn"
+	},
+	"subagents": {
+		"groupRunning": "Tiểu tác nhân · {{active}} trên {{total}} đang chạy",
+		"groupDone": "Tiểu tác nhân · {{completed}} trên {{total}} đã hoàn thành",
+		"groupDoneWithFailures": "Tiểu tác nhân · {{completed}} hoàn thành · {{failed}} thất bại",
+		"starting": "Đang bắt đầu...",
+		"queued": "Đang chờ",
+		"completed": "Đã hoàn thành",
+		"failed": "Thất bại",
+		"cancelled": "Đã hủy",
+		"partial": "một phần",
+		"cancel": "Hủy tiểu tác nhân",
+		"inspect": "Mở bản ghi",
+		"headerChip": "{{count}} tiểu tác nhân đang chạy",
+		"metaTools": "{{count}} công cụ",
+		"metaRead": "{{count}} lần đọc",
+		"metaWritten": "{{count}} lần ghi",
+		"worktreeKept": "worktree được giữ",
+		"worktreeRemoved": "worktree đã xóa",
+		"viewLive": "Xem trực tiếp",
+		"liveTitle": "Phiên ghi trực tiếp",
+		"close": "Đóng",
+		"loadEarlier": "Tải thêm trước đó",
+		"noActivity": "Chưa có hoạt động công cụ",
+		"liveEnded": "Quá trình đã kết thúc",
+		"roleUser": "Người dùng",
+		"roleAssistant": "Tác nhân",
+		"reasoning": "Suy luận",
+		"result": "Kết quả",
+		"actions": {
+			"readfile": "Đọc tệp",
+			"searchfiles": "Tìm tệp",
+			"listfiles": "Liệt kê thư mục",
+			"codebasesearch": "Tìm trong mã",
+			"executecommand": "Chạy lệnh",
+			"writetofile": "Ghi tệp",
+			"editfile": "Sửa tệp",
+			"completion": "Viết báo cáo cuối"
+		}
 	}
 }

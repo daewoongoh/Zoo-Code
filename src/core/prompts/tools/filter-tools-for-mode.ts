@@ -76,6 +76,7 @@ export function filterNativeToolsForMode(
 		todoListEnabled?: boolean
 		disabledTools?: string[]
 		modelInfo?: Pick<ModelInfo, "includedTools" | "excludedTools">
+		subagentsEnabled?: boolean
 	},
 	mcpHub?: McpHub,
 	allowedMcpServers?: string[],
@@ -99,6 +100,7 @@ export function filterNativeToolsForMode(
 		todoListEnabled: settings?.todoListEnabled,
 		codeIndexManager,
 		allowedMcpServers,
+		subagentsEnabled: settings?.subagentsEnabled,
 	})
 
 	// Apply model-specific alias renames (canonical -> alias) to the allowed set.

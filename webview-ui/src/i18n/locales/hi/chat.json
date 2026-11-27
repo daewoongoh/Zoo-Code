@@ -515,5 +515,44 @@
 	"diffView": {
 		"hiddenLines_one": "{{count}} छिपी हुई पंक्ति",
 		"hiddenLines_other": "{{count}} छिपी हुई पंक्तियाँ"
+	},
+	"subagents": {
+		"groupRunning": "सबएजेंट · {{total}} में से {{active}} चल रहे हैं",
+		"groupDone": "सबएजेंट · {{total}} में से {{completed}} पूर्ण हुए",
+		"groupDoneWithFailures": "सबएजेंट · {{completed}} पूर्ण · {{failed}} विफल",
+		"starting": "प्रारंभ हो रहा है...",
+		"queued": "कतार में",
+		"completed": "पूर्ण",
+		"failed": "विफल",
+		"cancelled": "रद्द",
+		"partial": "आंशिक",
+		"cancel": "सबएजेंट रद्द करें",
+		"inspect": "ट्रांसक्रिप्ट खोलें",
+		"headerChip": "{{count}} सबएजेंट चल रहे हैं",
+		"metaTools": "{{count}} टूल",
+		"metaRead": "{{count}} पठन",
+		"metaWritten": "{{count}} लेखन",
+		"worktreeKept": "वर्कट्री रखा गया",
+		"worktreeRemoved": "वर्कट्री हटाया गया",
+		"viewLive": "लाइव देखें",
+		"liveTitle": "लाइव ट्रांसक्रिप्ट",
+		"close": "बंद करें",
+		"loadEarlier": "पहले के लोड करें",
+		"noActivity": "अभी तक कोई टूल गतिविधि नहीं",
+		"liveEnded": "रन समाप्त",
+		"roleUser": "उपयोगकर्ता",
+		"roleAssistant": "एजेंट",
+		"reasoning": "तर्क",
+		"result": "परिणाम",
+		"actions": {
+			"readfile": "फ़ाइल पढ़ें",
+			"searchfiles": "फ़ाइलें खोजें",
+			"listfiles": "निर्देशिका सूची करें",
+			"codebasesearch": "कोडबेस खोजें",
+			"executecommand": "कमांड चलाएँ",
+			"writetofile": "फ़ाइल लिखें",
+			"editfile": "फ़ाइल संपादित करें",
+			"completion": "अंतिम रिपोर्ट लिखें"
+		}
 	}
 }

@@ -704,6 +704,20 @@
 			"setupInstructions": "Kurulum talimatları"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Alt ajanları etkinleştir",
+			"description": "Etkinleştirildiğinde, tam araç modları paralel çalışan headless alt ajanlar oluşturabilir. Her alt ajan kendi bağlamında çalışır ve ana sohbete yalnızca bir özet döndürür."
+		},
+		"concurrency": {
+			"label": "Maksimum eşzamanlı alt ajan",
+			"description": "Aynı anda kaç alt ajanın çalışabileceği. Ek çalıştırmalar kuyrukta bekler."
+		},
+		"maxTurns": {
+			"label": "Alt ajan başına varsayılan maksimum tur",
+			"description": "Tanımında belirtilmemiş alt ajanlar için tur sınırı. Sınıra ulaşan bir alt ajan durur ve kısmi bir özet döndürür."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Kontrol noktası başlatma zaman aşımı (saniye)",

@@ -4,7 +4,7 @@ import { serializeError } from "serialize-error"
 import { Anthropic } from "@anthropic-ai/sdk"
 
 import type { ToolName, ClineAsk, ToolProgressStatus } from "@roo-code/types"
-import { TelemetryEventName } from "@roo-code/types"
+import { TelemetryEventName, isForbiddenSubagentTool } from "@roo-code/types"
 import { TelemetryService } from "@roo-code/telemetry"
 import { customToolRegistry } from "@roo-code/core"
 
@@ -34,6 +34,7 @@ import { askFollowupQuestionTool } from "../tools/AskFollowupQuestionTool"
 import { switchModeTool } from "../tools/SwitchModeTool"
 import { attemptCompletionTool, AttemptCompletionCallbacks } from "../tools/AttemptCompletionTool"
 import { newTaskTool } from "../tools/NewTaskTool"
+import { subagentTool } from "../tools/SubagentTool"
 import { updateTodoListTool } from "../tools/UpdateTodoListTool"
 import { runSlashCommandTool } from "../tools/RunSlashCommandTool"
 import { skillTool } from "../tools/SkillTool"
@@ -45,6 +46,14 @@ import { codebaseSearchTool } from "../tools/CodebaseSearchTool"
 
 import { formatResponse } from "../prompts/responses"
 import { sanitizeToolUseId } from "../../utils/tool-id"
+
+/**
+ * True when a `spawn_subagent` batch still owes tool_results for this turn.
+ * Test doubles that model only the presentation surface omit the method.
+ */
+function hasQueuedSubagentBatch(cline: Task): boolean {
+	return typeof cline.hasQueuedSubagentBatch === "function" && cline.hasQueuedSubagentBatch()
+}
 
 /**
  * Maps a raw, potentially model-controlled tool name to a safe analytics key.
@@ -773,6 +782,13 @@ async function presentAssistantMessageBlock(cline: Task, policySnapshot: Request
 						stateExperiments,
 						includedTools,
 					)
+
+					// Flat two-level hierarchy: the child prompt omits these
+					// tools, and a hallucinated call is rejected here rather
+					// than delegating, switching the shared mode or spawning.
+					if (cline.subagent && isForbiddenSubagentTool(block.name)) {
+						throw new Error(`Tool "${block.name}" is not available to a subagent.`)
+					}
 				} catch (error) {
 					cline.consecutiveMistakeCount++
 					// For validation errors (unknown tool, tool not allowed for mode), we need to:
@@ -806,6 +822,16 @@ async function presentAssistantMessageBlock(cline: Task, policySnapshot: Request
 				// (flushTelemetryInstallment), never as one event per tool call.
 				const recordName = toTelemetryToolName(block.name, isCustomTool, stateExperiments)
 				cline.recordToolUsage(recordName)
+
+				// A headless run reports tool starts so the live card can show a
+				// ticker. The hook is best-effort and never alters execution.
+				if (cline.subagent?.onToolUse) {
+					try {
+						cline.subagent.onToolUse(block.name, (block.params ?? {}) as Record<string, unknown>)
+					} catch {
+						// A progress hook must not fail a run.
+					}
+				}
 
 				// Track legacy format usage for read_file tool (for migration monitoring).
 				// Model ids on telemetry events are non-policy labels: a live
@@ -1023,8 +1049,21 @@ async function presentAssistantMessageBlock(cline: Task, policySnapshot: Request
 					})
 					break
 				case "new_task":
+					// A new_task ends this task. Collect every in-flight subagent
+					// first so its result reaches the conversation before delegation.
+					if (hasQueuedSubagentBatch(cline)) {
+						await cline.runSubagentBatch({ immediate: true })
+					}
 					await checkpointSaveAndMark(cline)
 					await newTaskTool.handle(cline, block as ToolUse<"new_task">, {
+						askApproval,
+						handleError,
+						pushToolResult,
+						toolCallId,
+					})
+					break
+				case "spawn_subagent":
+					await subagentTool.handle(cline, block as ToolUse<"spawn_subagent">, {
 						askApproval,
 						handleError,
 						pushToolResult,
@@ -1159,7 +1198,12 @@ async function presentAssistantMessageBlock(cline: Task, policySnapshot: Request
 			// true when out of bounds. This gracefully allows the stream to
 			// continue on and all potential content blocks be presented.
 			// Last block is complete and it is finished executing
-			cline.userMessageContentReady = true // Will allow `pWaitFor` to continue.
+			// A queued subagent batch keeps the turn open: its tool_results are
+			// pushed in call order by `runSubagentBatch`, which owns the ready
+			// latch for that turn.
+			if (!hasQueuedSubagentBatch(cline)) {
+				cline.userMessageContentReady = true // Will allow `pWaitFor` to continue.
+			}
 		}
 
 		// Call next block if it exists (if not then read stream will call it
@@ -1175,7 +1219,7 @@ async function presentAssistantMessageBlock(cline: Task, policySnapshot: Request
 		} else {
 			// CRITICAL FIX: If we're out of bounds and the stream is complete, set userMessageContentReady
 			// This handles the case where assistantMessageContent is empty or becomes empty after processing
-			if (cline.didCompleteReadingStream) {
+			if (cline.didCompleteReadingStream && !hasQueuedSubagentBatch(cline)) {
 				cline.userMessageContentReady = true
 			}
 		}

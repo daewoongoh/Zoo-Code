@@ -515,5 +515,44 @@
 	"diffView": {
 		"hiddenLines_one": "{{count}} verborgen regel",
 		"hiddenLines_other": "{{count}} verborgen regels"
+	},
+	"subagents": {
+		"groupRunning": "Subagenten · {{active}} van {{total}} actief",
+		"groupDone": "Subagenten · {{completed}} van {{total}} klaar",
+		"groupDoneWithFailures": "Subagenten · {{completed}} voltooid · {{failed}} mislukt",
+		"starting": "Starten...",
+		"queued": "In wachtrij",
+		"completed": "Voltooid",
+		"failed": "Mislukt",
+		"cancelled": "Geannuleerd",
+		"partial": "gedeeltelijk",
+		"cancel": "Subagent annuleren",
+		"inspect": "Transcript openen",
+		"headerChip": "{{count}} subagent(en) actief",
+		"metaTools": "{{count}} tools",
+		"metaRead": "{{count}} gelezen",
+		"metaWritten": "{{count}} geschreven",
+		"worktreeKept": "worktree behouden",
+		"worktreeRemoved": "worktree verwijderd",
+		"viewLive": "Live bekijken",
+		"liveTitle": "Live-transcript",
+		"close": "Sluiten",
+		"loadEarlier": "Eerder laden",
+		"noActivity": "Nog geen tool-activiteit",
+		"liveEnded": "Uitvoering beëindigd",
+		"roleUser": "Gebruiker",
+		"roleAssistant": "Agent",
+		"reasoning": "Redenering",
+		"result": "Resultaat",
+		"actions": {
+			"readfile": "Bestand lezen",
+			"searchfiles": "Bestanden zoeken",
+			"listfiles": "Map weergeven",
+			"codebasesearch": "Code doorzoeken",
+			"executecommand": "Opdracht uitvoeren",
+			"writetofile": "Bestand schrijven",
+			"editfile": "Bestand bewerken",
+			"completion": "Eindrapport schrijven"
+		}
 	}
 }

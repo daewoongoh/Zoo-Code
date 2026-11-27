@@ -498,5 +498,44 @@
 	},
 	"diffView": {
 		"hiddenLines_other": "已隱藏 {{count}} 行"
+	},
+	"subagents": {
+		"groupRunning": "子代理 · 共{{total}}個，正在執行{{active}}個",
+		"groupDone": "子代理 · 共{{total}}個，已完成{{completed}}個",
+		"groupDoneWithFailures": "子代理 · {{completed}}個已完成 · {{failed}}個失敗",
+		"starting": "正在啟動...",
+		"queued": "等待中",
+		"completed": "已完成",
+		"failed": "失敗",
+		"cancelled": "已取消",
+		"partial": "部分完成",
+		"cancel": "取消子代理",
+		"inspect": "開啟記錄",
+		"headerChip": "{{count}}個子代理正在執行",
+		"metaTools": "{{count}}個工具",
+		"metaRead": "{{count}}次讀取",
+		"metaWritten": "{{count}}次寫入",
+		"worktreeKept": "工作樹已保留",
+		"worktreeRemoved": "工作樹已刪除",
+		"viewLive": "即時查看",
+		"liveTitle": "即時記錄",
+		"close": "關閉",
+		"loadEarlier": "載入更早內容",
+		"noActivity": "暫無工具活動",
+		"liveEnded": "執行已結束",
+		"roleUser": "使用者",
+		"roleAssistant": "代理",
+		"reasoning": "推理",
+		"result": "結果",
+		"actions": {
+			"readfile": "讀取檔案",
+			"searchfiles": "搜尋檔案",
+			"listfiles": "列出目錄",
+			"codebasesearch": "搜尋程式碼庫",
+			"executecommand": "執行命令",
+			"writetofile": "寫入檔案",
+			"editfile": "編輯檔案",
+			"completion": "撰寫最終報告"
+		}
 	}
 }

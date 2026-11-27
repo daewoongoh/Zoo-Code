@@ -513,5 +513,44 @@
 	},
 	"diffView": {
 		"hiddenLines_other": "{{count}} baris tersembunyi"
+	},
+	"subagents": {
+		"groupRunning": "Subagen · {{active}} dari {{total}} berjalan",
+		"groupDone": "Subagen · {{completed}} dari {{total}} selesai",
+		"groupDoneWithFailures": "Subagen · {{completed}} selesai · {{failed}} gagal",
+		"starting": "Memulai...",
+		"queued": "Antrean",
+		"completed": "Selesai",
+		"failed": "Gagal",
+		"cancelled": "Dibatalkan",
+		"partial": "sebagian",
+		"cancel": "Batalkan subagen",
+		"inspect": "Buka transkrip",
+		"headerChip": "{{count}} subagen berjalan",
+		"metaTools": "{{count}} alat",
+		"metaRead": "{{count}} baca",
+		"metaWritten": "{{count}} tulis",
+		"worktreeKept": "worktree dipertahankan",
+		"worktreeRemoved": "worktree dihapus",
+		"viewLive": "Lihat langsung",
+		"liveTitle": "Transkrip langsung",
+		"close": "Tutup",
+		"loadEarlier": "Muat lebih awal",
+		"noActivity": "Belum ada aktivitas alat",
+		"liveEnded": "Jalur selesai",
+		"roleUser": "Pengguna",
+		"roleAssistant": "Agen",
+		"reasoning": "Penalaran",
+		"result": "Hasil",
+		"actions": {
+			"readfile": "Baca berkas",
+			"searchfiles": "Cari berkas",
+			"listfiles": "Daftar direktori",
+			"codebasesearch": "Cari kode",
+			"executecommand": "Jalankan perintah",
+			"writetofile": "Tulis berkas",
+			"editfile": "Edit berkas",
+			"completion": "Tulis laporan akhir"
+		}
 	}
 }

@@ -4478,6 +4478,55 @@ export const webviewMessageHandler = async (
 			break
 		}
 
+		case "cancelSubagent": {
+			if (message.runId) {
+				provider.getSubagentManager().cancel(message.runId)
+			}
+			break
+		}
+
+		case "inspectSubagentTranscript": {
+			if (!message.runId) {
+				break
+			}
+
+			try {
+				const content = await provider.getSubagentManager().readTranscript(message.runId)
+				const document = await vscode.workspace.openTextDocument({ content, language: "json" })
+				await vscode.window.showTextDocument(document, {
+					preview: true,
+					viewColumn: message.openInTab ? vscode.ViewColumn.Beside : undefined,
+				})
+			} catch (error) {
+				provider.log(
+					`[subagents] failed to open transcript for ${message.runId}: ${
+						error instanceof Error ? error.message : String(error)
+					}`,
+				)
+			}
+			break
+		}
+
+		case "requestSubagentTranscript": {
+			if (message.runId) {
+				const chunks = provider.getSubagentManager().requestTranscript(message.runId)
+				for (const chunk of chunks) {
+					await provider.postMessageToWebview({
+						type: "subagentTranscriptChunk",
+						subagentTranscriptChunk: chunk,
+					})
+				}
+			}
+			break
+		}
+
+		case "setSubagentLiveViewer": {
+			if (message.runId) {
+				provider.getSubagentManager().setLiveViewer(message.runId, message.open ?? false)
+			}
+			break
+		}
+
 		default: {
 			// console.log(`Unhandled message type: ${message.type}`)
 			//

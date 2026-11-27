@@ -706,6 +706,20 @@
 			"setupInstructions": "Instrukcja konfiguracji"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Włącz podagentów",
+			"description": "Po włączeniu tryby pełnych narzędzi mogą tworzyć bezgłowych podagentów działających równolegle. Każdy podagent działa we własnym kontekście i zwraca do głównego czatu tylko podsumowanie."
+		},
+		"concurrency": {
+			"label": "Maksymalna liczba równoczesnych podagentów",
+			"description": "Ile podagentów może działać jednocześnie. Dodatkowe uruchomienia czekają w kolejce."
+		},
+		"maxTurns": {
+			"label": "Domyślna maksymalna liczba tur na podagenta",
+			"description": "Limit tur dla podagentów, których definicja go nie określa. Podagent, który osiągnie limit, zatrzymuje się i zwraca częściowe podsumowanie."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Limit czasu inicjalizacji punktu kontrolnego (sekundy)",

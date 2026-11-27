@@ -703,6 +703,20 @@
 			"setupInstructions": "Hướng dẫn thiết lập"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Bật tiểu tác nhân",
+			"description": "Khi được bật, các chế độ đầy đủ công cụ có thể tạo ra các tiểu tác nhân headless chạy song song. Mỗi tiểu tác nhân làm việc trong ngữ cảnh riêng và chỉ trả về một bản tóm tắt cho cuộc trò chuyện chính."
+		},
+		"concurrency": {
+			"label": "Số tiểu tác nhân đồng thời tối đa",
+			"description": "Bao nhiêu tiểu tác nhân có thể chạy cùng lúc. Các lần chạy thêm sẽ chờ trong hàng đợi."
+		},
+		"maxTurns": {
+			"label": "Số lượt tối đa mặc định cho mỗi tiểu tác nhân",
+			"description": "Giới hạn lượt cho tiểu tác nhân mà định nghĩa không đặt một lượt. Tiểu tác nhân đạt giới hạn sẽ dừng lại và trả về bản tóm tắt một phần."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Thời gian chờ khởi tạo điểm kiểm tra (giây)",

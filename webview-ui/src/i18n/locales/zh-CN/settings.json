@@ -703,6 +703,20 @@
 			"setupInstructions": "设置说明"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "启用子代理",
+			"description": "启用后，完整工具模式可以创建并行运行的无头子代理。每个子代理在各自的上下文中工作，并仅向主聊天返回摘要。"
+		},
+		"concurrency": {
+			"label": "最大并发子代理数",
+			"description": "同时可以运行多少个子代理。额外的运行会在队列中等待。"
+		},
+		"maxTurns": {
+			"label": "每个子代理的默认最大轮次",
+			"description": "适用于未在定义中设置该值的子代理的轮次限制。达到限制的子代理会停止并返回部分摘要。"
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "存档点初始化超时时间（秒）",

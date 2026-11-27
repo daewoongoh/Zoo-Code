@@ -2,6 +2,74 @@ import { NativeToolCallParser, type ToolCallStreamEvent } from "../NativeToolCal
 
 describe("NativeToolCallParser", () => {
 	describe("parseToolCall", () => {
+		describe("spawn_subagent tool", () => {
+			it("should parse the required fields into typed nativeArgs", () => {
+				const toolCall = {
+					id: "toolu_spawn",
+					name: "spawn_subagent" as const,
+					arguments: JSON.stringify({
+						agent: "explore",
+						description: "Trace JWT refresh failures",
+						prompt: "Find every place JWT refresh errors are handled.",
+						model: "my-model",
+						isolation: "worktree",
+					}),
+				}
+
+				const result = NativeToolCallParser.parseToolCall(toolCall)
+
+				expect(result).not.toBeNull()
+				expect(result?.type).toBe("tool_use")
+				if (result?.type === "tool_use") {
+					const nativeArgs = result.nativeArgs as {
+						agent: string
+						description: string
+						prompt: string
+						model?: string
+						isolation?: "none" | "worktree"
+					}
+					expect(nativeArgs.agent).toBe("explore")
+					expect(nativeArgs.description).toBe("Trace JWT refresh failures")
+					expect(nativeArgs.prompt).toContain("JWT refresh")
+					expect(nativeArgs.model).toBe("my-model")
+					expect(nativeArgs.isolation).toBe("worktree")
+				}
+			})
+
+			it("should accept optional model and isolation omitted", () => {
+				const toolCall = {
+					id: "toolu_spawn2",
+					name: "spawn_subagent" as const,
+					arguments: JSON.stringify({
+						agent: "general",
+						description: "Summarize",
+						prompt: "Summarize the findings.",
+					}),
+				}
+
+				const result = NativeToolCallParser.parseToolCall(toolCall)
+
+				expect(result).not.toBeNull()
+				if (result?.type === "tool_use") {
+					expect(result.nativeArgs).toMatchObject({
+						agent: "general",
+						description: "Summarize",
+						prompt: "Summarize the findings.",
+					})
+				}
+			})
+
+			it("should fail (return null) when a required field is missing", () => {
+				const toolCall = {
+					id: "toolu_spawn3",
+					name: "spawn_subagent" as const,
+					arguments: JSON.stringify({}),
+				}
+
+				expect(NativeToolCallParser.parseToolCall(toolCall)).toBeNull()
+			})
+		})
+
 		describe("read_file tool", () => {
 			it("should parse minimal single-file read_file args", () => {
 				const toolCall = {

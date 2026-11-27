@@ -705,6 +705,20 @@
 			"setupInstructions": "Instrucciones de configuración"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Habilitar subagentes",
+			"description": "Al habilitarlo, los modos de herramientas completas pueden generar subagentes headless que se ejecutan en paralelo. Cada subagente trabaja en su propio contexto y devuelve solo un resumen al chat principal."
+		},
+		"concurrency": {
+			"label": "Máximo de subagentes simultáneos",
+			"description": "Cuántos subagentes pueden ejecutarse a la vez. Las ejecuciones adicionales esperan en una cola."
+		},
+		"maxTurns": {
+			"label": "Turns máximos predeterminados por subagente",
+			"description": "Límite de turnos para subagentes cuya definición no establece uno. Un subagente que alcanza el límite se detiene y devuelve un resumen parcial."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Tiempo de espera para inicializar el punto de control (segundos)",

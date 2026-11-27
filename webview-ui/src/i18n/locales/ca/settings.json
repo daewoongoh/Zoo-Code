@@ -705,6 +705,20 @@
 			"setupInstructions": "Instruccions de configuració"
 		}
 	},
+	"subagents": {
+		"enable": {
+			"label": "Habilita els subagents",
+			"description": "Si està habilitat, els modes d'eines completes poden generar subagents headless que s'executen en paral·lel. Cada subagent treballa en el seu propi context i només retorna un resum al xat principal."
+		},
+		"concurrency": {
+			"label": "Màxim de subagents simultanis",
+			"description": "Quants subagents poden executar-se alhora. Les execucions addicionals esperen en una cua."
+		},
+		"maxTurns": {
+			"label": "Torns màxims predeterminats per subagent",
+			"description": "Límit de torns per als subagents la definició dels quals no n'estableix cap. Un subagent que assoleix el límit s'atura i retorna un resum parcial."
+		}
+	},
 	"checkpoints": {
 		"timeout": {
 			"label": "Temps d'espera per inicialitzar el punt de control (segons)",

@@ -515,5 +515,44 @@
 	"diffView": {
 		"hiddenLines_one": "{{count}} ausgeblendete Zeile",
 		"hiddenLines_other": "{{count}} ausgeblendete Zeilen"
+	},
+	"subagents": {
+		"groupRunning": "Subagenten · {{active}} von {{total}} laufen",
+		"groupDone": "Subagenten · {{completed}} von {{total}} fertig",
+		"groupDoneWithFailures": "Subagenten · {{completed}} abgeschlossen · {{failed}} fehlgeschlagen",
+		"starting": "Starte...",
+		"queued": "In Warteschlange",
+		"completed": "Abgeschlossen",
+		"failed": "Fehlgeschlagen",
+		"cancelled": "Abgebrochen",
+		"partial": "teilweise",
+		"cancel": "Subagent abbrechen",
+		"inspect": "Transkript öffnen",
+		"headerChip": "{{count}} Subagent(en) laufen",
+		"metaTools": "{{count}} Werkzeuge",
+		"metaRead": "{{count}} gelesen",
+		"metaWritten": "{{count}} geschrieben",
+		"worktreeKept": "Worktree beibehalten",
+		"worktreeRemoved": "Worktree entfernt",
+		"viewLive": "Live ansehen",
+		"liveTitle": "Live-Transkript",
+		"close": "Schließen",
+		"loadEarlier": "Frühere laden",
+		"noActivity": "Noch keine Tool-Aktivität",
+		"liveEnded": "Lauf beendet",
+		"roleUser": "Benutzer",
+		"roleAssistant": "Agent",
+		"reasoning": "Begründung",
+		"result": "Ergebnis",
+		"actions": {
+			"readfile": "Datei lesen",
+			"searchfiles": "Dateien durchsuchen",
+			"listfiles": "Verzeichnis auflisten",
+			"codebasesearch": "Code durchsuchen",
+			"executecommand": "Befehl ausführen",
+			"writetofile": "Datei schreiben",
+			"editfile": "Datei bearbeiten",
+			"completion": "Abschlussbericht schreiben"
+		}
 	}
 }

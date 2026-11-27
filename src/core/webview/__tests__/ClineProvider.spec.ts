@@ -21,6 +21,8 @@ import {
 	ORGANIZATION_ALLOW_ALL,
 	DEFAULT_CHECKPOINT_TIMEOUT_SECONDS,
 	DEFAULT_DIFF_FUZZY_THRESHOLD,
+	DEFAULT_MAX_CONCURRENT_SUBAGENTS,
+	DEFAULT_SUBAGENT_MAX_TURNS,
 	DEFAULT_WRITE_DELAY_MS,
 	providerIdentifiers,
 	openAiModelInfoSaneDefaults,
@@ -4240,6 +4242,62 @@ describe("ClineProvider", () => {
 		expect(state).toHaveProperty("soundEnabled")
 		expect(state).toHaveProperty("ttsEnabled")
 		expect(state).toHaveProperty("writeDelayMs")
+	})
+
+	test("returns subagent settings to the webview with defaults, then the saved values", async () => {
+		await provider.resolveWebviewView(mockWebviewView)
+
+		const initial = await provider.getStateToPostToWebview()
+		expect(initial.subagentsEnabled).toBe(false)
+		expect(initial.maxConcurrentSubagents).toBe(DEFAULT_MAX_CONCURRENT_SUBAGENTS)
+		expect(initial.defaultSubagentMaxTurns).toBe(DEFAULT_SUBAGENT_MAX_TURNS)
+
+		await provider.contextProxy.setValue("subagentsEnabled", true)
+		await provider.contextProxy.setValue("maxConcurrentSubagents", 6)
+		await provider.contextProxy.setValue("defaultSubagentMaxTurns", 30)
+
+		const saved = { subagentsEnabled: true, maxConcurrentSubagents: 6, defaultSubagentMaxTurns: 30 }
+		expect(await provider.getStateToPostToWebview()).toMatchObject(saved)
+		expect(await provider.getState()).toMatchObject(saved)
+	})
+
+	test("keeps headless subagent transcripts out of the webview task history", async () => {
+		await provider.resolveWebviewView(mockWebviewView)
+
+		const baseHistoryItem = {
+			number: 1,
+			ts: Date.now(),
+			tokensIn: 0,
+			tokensOut: 0,
+			totalCost: 0,
+		}
+
+		const getAll = vi.spyOn(provider.taskHistoryStore, "getAll").mockReturnValue([
+			{ ...baseHistoryItem, id: "parent-task", task: "Parent task" },
+			{
+				...baseHistoryItem,
+				id: "run-1",
+				task: "Child prompt",
+				parentTaskId: "parent-task",
+				subagent: {
+					runId: "run-1",
+					groupId: "group-1",
+					parentTaskId: "parent-task",
+					agentName: "explore",
+					status: "completed",
+				},
+			},
+		])
+
+		try {
+			const posted = await provider.getStateToPostToWebview()
+			expect(posted.taskHistory?.map((item) => item.id)).toEqual(["parent-task"])
+
+			const state = await provider.getState()
+			expect(state.taskHistory.map((item) => item.id)).toEqual(["parent-task"])
+		} finally {
+			getAll.mockRestore()
+		}
 	})
 
 	test("getState and getStateToPostToWebview return the complete NanoGPT configuration", async () => {

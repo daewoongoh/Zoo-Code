@@ -30,6 +30,7 @@ import { ContextWindowProgress } from "./ContextWindowProgress"
 import { Mention } from "./Mention"
 import { TodoListDisplay } from "./TodoListDisplay"
 import { LucideIconButton } from "./LucideIconButton"
+import { SubagentActivityChip } from "./SubagentGroupCard"
 
 export interface TaskHeaderProps {
 	task: ClineMessage
@@ -204,6 +205,7 @@ const TaskHeader = ({
 							)}
 						</div>
 						<div className="flex items-center shrink-0 ml-2" onClick={(e) => e.stopPropagation()}>
+							<SubagentActivityChip parentTaskId={currentTaskItem?.id} />
 							<StandardTooltip content={isTaskExpanded ? t("chat:task.collapse") : t("chat:task.expand")}>
 								<button
 									onClick={() => setIsTaskExpanded(!isTaskExpanded)}

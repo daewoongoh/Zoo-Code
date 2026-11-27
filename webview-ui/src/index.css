@@ -71,6 +71,8 @@
 
 	--color-vscode-editorGroup-border: var(--vscode-editorGroup-border);
 
+	--color-vscode-editorWidget-background: var(--vscode-editorWidget-background);
+
 	--color-vscode-editorWarning-foreground: var(--vscode-editorWarning-foreground);
 	--color-vscode-editorWarning-background: var(--vscode-editorWarning-background);
 

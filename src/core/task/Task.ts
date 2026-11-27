@@ -30,6 +30,7 @@ import {
 	type ClineSay,
 	type ClineAsk,
 	type ExtensionState,
+	type ExtensionMessage,
 	type ToolProgressStatus,
 	type HistoryItem,
 	type PendingTaskAction,
@@ -100,7 +101,7 @@ import { formatResponse } from "../prompts/responses"
 import { SYSTEM_PROMPT } from "../prompts/system"
 import type { InstructionFailureCollector } from "../prompts/sections/custom-instructions"
 import { partitionDisabledToolsForProtocol } from "../prompts/tools/effective-tool-policy"
-import { buildNativeToolsArrayWithRestrictions } from "./build-tools"
+import { buildNativeToolsArrayWithRestrictions, describeAvailableSubagents } from "./build-tools"
 
 // core modules
 import { ToolRepetitionDetector } from "../tools/ToolRepetitionDetector"
@@ -146,6 +147,12 @@ import { mergeConsecutiveApiMessages } from "./mergeConsecutiveApiMessages"
 import { prepareApiConversationMessage } from "./apiConversationHistory"
 import { shouldAddUserMessageToHistory } from "./messageCounting"
 import { type TaskExecutionContext } from "./providerHandoff"
+import type { SubagentTaskContext, SubagentToolOutcome } from "../subagents/types"
+import type { SubagentRunSnapshot } from "@roo-code/types"
+import { formatSubagentOutcome } from "../subagents/formatSubagentResult"
+import { filterToolsForSubagent, filterAllowedFunctionNamesForSubagent } from "../subagents/toolFilter"
+import { toTranscriptBlocks } from "../subagents/transcript"
+import { SUBAGENT_TOOL_PROTOCOL } from "../subagents/prompt"
 import { abort, abortReason, initialRunState, type Ask, type RunEvent, type RunState } from "./run-state/runState"
 import { applyRunEvent, type RunRejection } from "./run-state/runStateShadow"
 import {
@@ -274,6 +281,15 @@ export interface TaskOptions extends CreateTaskOptions {
 	diffFuzzyThreshold?: number
 	/** Explicit task-local execution context for a delegated child. */
 	handoffExecutionContext?: TaskExecutionContext
+	/**
+	 * Runs this task as a headless subagent: no webview posting, non-interactive
+	 * asks, a restricted tool set and a turn cap.
+	 */
+	subagent?: SubagentTaskContext
+	/** Maximum API turns for a subagent run. Ignored for normal tasks. */
+	maxTurns?: number
+	/** Parent task id for a headless run that has no `parentTask` instance (worktrees). */
+	parentTaskId?: string
 }
 
 type AssistantMessagePersistenceResult = boolean
@@ -305,6 +321,20 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	readonly observationRegistry = new ObservationRegistry()
 
 	todoList?: TodoItem[]
+
+	/** Set only for headless subagent runs. */
+	readonly subagent?: SubagentTaskContext
+	readonly maxTurns?: number
+	subagentTurnCount = 0
+	subagentPartial = false
+	subagentStopRequested = false
+	/** Final `attempt_completion` result of a headless run. */
+	subagentSummary?: string
+	private subagentBatch?: {
+		calls: Array<{ toolUseId: string; promise: Promise<SubagentToolOutcome> }>
+	}
+	/** First spawn tool call of the current turn; all spawns of a turn share it. */
+	private currentSubagentGroupId?: string
 
 	readonly rootTask: Task | undefined = undefined
 	readonly parentTask: Task | undefined = undefined
@@ -640,6 +670,160 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	}
 
 	/**
+	 * Registers a `spawn_subagent` call with the current turn's batch. The
+	 * presenter keeps the tool_result open; `runSubagentBatch` fills it once the
+	 * turn's presentation is complete, so parallel children never interleave
+	 * their results into the parent conversation.
+	 */
+	public registerSubagentCall(toolUseId: string, promise: Promise<SubagentToolOutcome>): void {
+		this.subagentBatch ??= { calls: [] }
+		this.subagentBatch.calls.push({ toolUseId, promise })
+	}
+
+	/** True while a spawn batch still owes tool_results to the current turn. */
+	public hasQueuedSubagentBatch(): boolean {
+		return (this.subagentBatch?.calls.length ?? 0) > 0
+	}
+
+	/** True when the current assistant message asked for at least one spawn. */
+	private hasSubagentSpawnToolUse(): boolean {
+		return this.assistantMessageContent.some(
+			(block) => block.type === "tool_use" && block.name === "spawn_subagent",
+		)
+	}
+
+	/**
+	 * Returns the group id shared by every spawn of this turn. The first spawn's
+	 * tool_use id is the group id, which makes the batch id stable across
+	 * reloads without extra persistence.
+	 */
+	public getSubagentGroupId(toolUseId: string): string {
+		this.currentSubagentGroupId ??= toolUseId
+		return this.currentSubagentGroupId
+	}
+
+	/**
+	 * True when the assistant turn has finished streaming and every block has
+	 * been presented. The subagent flush waits for this so a late spawn block
+	 * cannot join the batch after results were already pushed.
+	 */
+	private isAssistantTurnFullyPresented(): boolean {
+		if (!this.didCompleteReadingStream || this.dispatchState !== DispatchState.IDLE) {
+			return false
+		}
+
+		if (this.currentStreamingContentIndex < this.assistantMessageContent.length) {
+			return false
+		}
+
+		return this.assistantMessageContent.every((block) => !block.partial)
+	}
+
+	/**
+	 * Awaits every queued subagent and pushes one ordered tool_result per call.
+	 *
+	 * Results keep call order rather than completion order so the parent sees a
+	 * deterministic transcript. Cancellation is a normal terminal outcome: the
+	 * runner resolves with a `cancelled` snapshot, never rejects.
+	 */
+	public async runSubagentBatch(options: { immediate?: boolean } = {}): Promise<void> {
+		const requested = this.hasQueuedSubagentBatch() || this.hasSubagentSpawnToolUse()
+
+		if (!requested) {
+			return
+		}
+
+		if (!options.immediate) {
+			await pWaitFor(() => this.isAssistantTurnFullyPresented() || this.abort || this.abandoned)
+		}
+
+		if (this.abort || this.abandoned) {
+			return
+		}
+
+		const batch = this.subagentBatch
+
+		// Presentation can finish without a batch when every spawn was rejected
+		// before it registered (disabled tool, unknown agent, bad params). The
+		// presenter's ready latch then needs this turn to release it instead.
+		if (!batch) {
+			this.userMessageContentReady = true
+			return
+		}
+
+		this.subagentBatch = undefined
+		const groupId = this.currentSubagentGroupId
+
+		for (const call of batch.calls) {
+			let outcome: SubagentToolOutcome
+
+			try {
+				outcome = await call.promise
+			} catch (error) {
+				outcome = {
+					runId: call.toolUseId,
+					agentName: "unknown",
+					status: "failed",
+					summary: "",
+					error: error instanceof Error ? error.message : String(error),
+					filesRead: [],
+					filesModified: [],
+					toolCallCount: 0,
+					tokenUsage: { input: 0, output: 0 },
+				}
+			}
+
+			this.pushToolResultToUserContent({
+				type: "tool_result",
+				tool_use_id: sanitizeToolUseId(call.toolUseId),
+				content: formatSubagentOutcome(outcome),
+				...(outcome.status === "failed" ? { is_error: true } : {}),
+			})
+		}
+
+		this.currentSubagentGroupId = undefined
+		this.userMessageContentReady = true
+
+		if (groupId) {
+			await this.providerRef.deref()?.getSubagentManager?.()?.finalizeGroup(groupId)
+		}
+	}
+
+	/**
+	 * Rewrites the leader `spawnSubagent` row with the final run snapshots so a
+	 * reloaded chat can render the group without the live update stream.
+	 */
+	public async updateSubagentGroupMessage(groupId: string, runs: SubagentRunSnapshot[]): Promise<void> {
+		const message = this.clineMessages.find((candidate) => {
+			if (candidate.type !== "say" || candidate.say !== "tool" || !candidate.text) {
+				return false
+			}
+
+			try {
+				const parsed = JSON.parse(candidate.text)
+				return parsed?.tool === "spawnSubagent" && parsed?.runId === groupId
+			} catch {
+				return false
+			}
+		})
+
+		if (!message || !message.text) {
+			return
+		}
+
+		try {
+			const parsed = JSON.parse(message.text)
+			message.text = JSON.stringify({ ...parsed, runs })
+			await this.saveClineMessages()
+			this.updateClineMessage(message).catch((error) => {
+				console.error("[Task#updateSubagentGroupMessage] updateClineMessage failed:", error)
+			})
+		} catch {
+			// A malformed row must not break run completion.
+		}
+	}
+
+	/**
 	 * Derives terminal tool-turn readiness from the protocol state instead of
 	 * relying exclusively on the presenter's one-shot boolean latch.
 	 *
@@ -743,6 +927,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		rateLimitClock,
 		diffFuzzyThreshold,
 		handoffExecutionContext,
+		subagent,
+		maxTurns,
+		parentTaskId: optionsParentTaskId,
 	}: TaskOptions) {
 		super()
 		this.segments = segments
@@ -769,7 +956,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		this.taskId = historyItem ? historyItem.id : (taskId ?? uuidv7())
 		this.rootTaskId = historyItem ? historyItem.rootTaskId : rootTask?.taskId
-		this.parentTaskId = historyItem ? historyItem.parentTaskId : parentTask?.taskId
+		this.parentTaskId = historyItem ? historyItem.parentTaskId : (parentTask?.taskId ?? optionsParentTaskId)
 		this.childTaskId = undefined
 
 		this.metadata = {
@@ -813,6 +1000,8 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 		this.parentTask = parentTask
 		this.taskNumber = taskNumber
+		this.subagent = subagent
+		this.maxTurns = maxTurns
 		this.initialStatus = initialStatus ?? historyItem?.status
 		this.pendingAction = historyItem?.pendingAction
 
@@ -847,6 +1036,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.messageQueueStateChangedHandler = () => {
 			this.emit(RooCodeEventName.TaskUserMessage, this.taskId)
 			this.emit(RooCodeEventName.QueuedMessagesUpdated, this.taskId, this.messageQueueService.messages)
+			if (this.subagent) {
+				return
+			}
 			void this.providerRef
 				.deref()
 				?.postStateToWebviewThrottled()
@@ -1469,6 +1661,12 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			}),
 		)
 
+		// Stream the appended message to the live transcript viewer (headless
+		// only; the viewer is the sole consumer of this channel).
+		if (message.role !== "system") {
+			this.subagent?.onTranscriptMessage?.(message.role, toTranscriptBlocks(message.content, reasoning))
+		}
+
 		let saved = await this.saveApiConversationHistory()
 		if (!saved && resolvesPendingAction) {
 			saved = await this.retrySaveApiConversationHistory()
@@ -1723,16 +1921,18 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		// Partial *asks* still flush, via the clause below — `Task#ask` adds them without
 		// `isAnswered`, so they keep the ordering guarantee that unanswered asks depend on.
 		const requiresImmediateState = message.type === "ask" && message.isAnswered !== true
-		try {
-			await provider?.postStateToWebviewThrottled()
-		} catch (error) {
-			console.error("[Task#addToClineMessages] postStateToWebviewThrottled failed:", error)
-		}
-		if (requiresImmediateState) {
+		if (!this.subagent) {
 			try {
-				await provider?.flushPostStateToWebviewThrottled()
+				await provider?.postStateToWebviewThrottled()
 			} catch (error) {
-				console.error("[Task#addToClineMessages] flushPostStateToWebviewThrottled failed:", error)
+				console.error("[Task#addToClineMessages] postStateToWebviewThrottled failed:", error)
+			}
+			if (requiresImmediateState) {
+				try {
+					await provider?.flushPostStateToWebviewThrottled()
+				} catch (error) {
+					console.error("[Task#addToClineMessages] flushPostStateToWebviewThrottled failed:", error)
+				}
 			}
 		}
 		this.emit(RooCodeEventName.Message, { action: "created", message })
@@ -1826,8 +2026,22 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 	private async updateClineMessage(message: ClineMessage) {
 		const provider = this.providerRef.deref()
-		await provider?.postMessageToWebview({ type: "messageUpdated", clineMessage: message })
+		if (!this.subagent) {
+			await provider?.postMessageToWebview({ type: "messageUpdated", clineMessage: message })
+		}
 		this.emit(RooCodeEventName.Message, { action: "updated", message })
+	}
+
+	/**
+	 * Posts an extension message for interactive tasks. A headless subagent has
+	 * no screen, so every webview-only signal is dropped here rather than at
+	 * each call site.
+	 */
+	private async postToWebviewIfInteractive(message: ExtensionMessage): Promise<void> {
+		if (this.subagent) {
+			return
+		}
+		await this.providerRef.deref()?.postMessageToWebview(message)
 	}
 
 	/**
@@ -1883,7 +2097,27 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 
 			const provider = this.providerRef.deref()
 			const existingStatus = provider?.taskHistoryStore.get(this.taskId)?.status
-			await provider?.updateTaskHistory(existingStatus ? { ...historyItem, status: existingStatus } : historyItem)
+			const item = existingStatus ? { ...historyItem, status: existingStatus } : historyItem
+			// A headless run is persisted for its transcript, but never broadcast to
+			// the webview's task list. It also carries the run metadata the history
+			// can use to link a transcript back to its parent turn.
+			if (this.subagent) {
+				await provider?.updateTaskHistory(
+					{
+						...item,
+						subagent: {
+							runId: this.subagent.runId,
+							groupId: this.subagent.groupId,
+							parentTaskId: this.parentTaskId ?? "",
+							agentName: this.subagent.definition.name,
+							status: "running",
+						},
+					},
+					{ broadcast: false },
+				)
+			} else {
+				await provider?.updateTaskHistory(item)
+			}
 		} catch (error) {
 			// The message array was persisted above; a metadata or task-history failure must
 			// not mask that write (see the method docs). The next saveClineMessages() call
@@ -1938,6 +2172,19 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		// still alive until this promise resolves or rejects.)
 		if (this.abort) {
 			throw new Error(`[RooCode#ask] task ${this.taskId}.${this.instanceId} aborted`)
+		}
+
+		// A headless subagent never blocks on the webview. The runner's policy
+		// auto-approves tools and commands, and a `completion_result` answer ends
+		// the run instead of waiting for a user click.
+		if (this.subagent) {
+			const answer = this.subagent.onAsk?.(type, text) ?? { response: "yesButtonClicked" as ClineAskResponse }
+
+			if (type === "completion_result" && answer.response === "yesButtonClicked") {
+				this.subagentStopRequested = true
+			}
+
+			return answer
 		}
 
 		let askTs: number
@@ -2739,6 +2986,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				experiments: state?.experiments,
 				apiConfiguration,
 				disabledTools: state?.disabledTools,
+				subagentsEnabled: state?.subagentsEnabled,
 				modelInfo: requestModelInfo,
 				includeAllToolsWithRestrictions: false,
 			})
@@ -2852,6 +3100,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 	): Promise<undefined> {
 		if (this.abort) {
 			throw new Error(`[RooCode#say] task ${this.taskId}.${this.instanceId} aborted`)
+		}
+
+		if (this.subagent && type === "completion_result") {
+			this.subagentSummary = text ?? ""
 		}
 
 		if (partial !== undefined) {
@@ -3118,7 +3370,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			// The todo list is already set in the constructor if initialTodos were provided
 			// No need to add any messages - the todoList property is already set
 
-			await this.providerRef.deref()?.postStateToWebviewWithoutTaskHistory()
+			if (!this.subagent) {
+				await this.providerRef.deref()?.postStateToWebviewWithoutTaskHistory()
+			}
 
 			await this.say("text", task, images)
 
@@ -3676,7 +3930,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.emitFinalTokenUsageUpdate()
 
 		try {
-			await this.providerRef.deref()?.flushPostStateToWebviewThrottled()
+			if (!this.subagent) {
+				await this.providerRef.deref()?.flushPostStateToWebviewThrottled()
+			}
 		} catch (error) {
 			console.error(
 				`[Task#abortTask] flushPostStateToWebviewThrottled failed for ${this.taskId}.${this.instanceId}:`,
@@ -3979,6 +4235,15 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		this.emit(RooCodeEventName.TaskStarted)
 
 		while (!this.abort) {
+			// A headless run stops at its turn cap instead of looping forever.
+			// `subagentPartial` tells the parent the report is incomplete.
+			if (this.subagent && this.maxTurns !== undefined && this.subagentTurnCount >= this.maxTurns) {
+				this.subagentPartial = true
+				break
+			}
+
+			this.subagentTurnCount++
+
 			const didEndLoop = await this.recursivelyMakeClineRequests(nextUserContent, includeFileDetails)
 			includeFileDetails = false // We only need file details the first time.
 
@@ -4141,7 +4406,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			} satisfies ClineApiReqInfo)
 
 			await this.saveClineMessages()
-			await this.providerRef.deref()?.postStateToWebviewWithoutTaskHistory()
+			if (!this.subagent) {
+				await this.providerRef.deref()?.postStateToWebviewWithoutTaskHistory()
+			}
 
 			try {
 				let cacheWriteTokens = 0
@@ -5008,7 +5275,9 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				}
 
 				await this.saveClineMessages()
-				await this.providerRef.deref()?.postStateToWebviewWithoutTaskHistory()
+				if (!this.subagent) {
+					await this.providerRef.deref()?.postStateToWebviewWithoutTaskHistory()
+				}
 
 				// No legacy text-stream tool parser state to reset.
 
@@ -5176,6 +5445,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				}
 
 				if (hasTextContent || hasToolUses) {
+					// A spawn request owns the rest of this turn: wait for the
+					// presentation to finish and the children to settle, then push
+					// their results in call order before the next request.
+					if (this.hasQueuedSubagentBatch() || this.hasSubagentSpawnToolUse()) {
+						await this.runSubagentBatch()
+					}
+
 					// NOTE: This comment is here for future reference - this was a
 					// workaround for `userMessageContent` not getting set to true.
 					// It was due to it not recursively calling for partial blocks
@@ -5204,6 +5480,12 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						throw new Error(
 							`[RooCode#recursivelyMakeRooRequests] task ${this.taskId}.${this.instanceId} aborted`,
 						)
+					}
+
+					// A headless run accepts its own completion in `ask`; end the
+					// request loop here instead of sending another API request.
+					if (this.subagent && this.subagentStopRequested) {
+						return true
 					}
 
 					// If the model did not tool use, then we need to tell it to
@@ -5394,6 +5676,13 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		requestModelInfo?: ModelInfo,
 		failures?: InstructionFailureCollector,
 	): Promise<string> {
+		// A headless run uses its own agent prompt instead of the mode prompt.
+		// The protocol addendum keeps the completion contract even when a user
+		// writes a terse agent file.
+		if (this.subagent) {
+			return `${this.subagent.definition.systemPrompt}\n\n${SUBAGENT_TOOL_PROTOCOL}`
+		}
+
 		const { mcpEnabled } = requestState ?? {}
 		let mcpHub: McpHub | undefined
 		if (mcpEnabled ?? true) {
@@ -5624,7 +5913,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				`Forcing truncation to ${FORCED_CONTEXT_REDUCTION_PERCENT}% of current context.`,
 		)
 		// Send condenseTaskContextStarted to show in-progress indicator
-		await this.providerRef.deref()?.postMessageToWebview({ type: "condenseTaskContextStarted", text: this.taskId })
+		await this.postToWebviewIfInteractive({ type: "condenseTaskContextStarted", text: this.taskId })
 
 		// Build tools for condensing metadata (same tools used for normal API calls)
 		const provider = this.providerRef.deref()
@@ -5638,6 +5927,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				experiments: state?.experiments,
 				apiConfiguration,
 				disabledTools: state?.disabledTools,
+				subagentsEnabled: state?.subagentsEnabled,
 				modelInfo,
 				includeAllToolsWithRestrictions: false,
 			})
@@ -5703,9 +5993,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 		} finally {
 			// Notify webview that context management is complete (removes in-progress spinner)
 			// IMPORTANT: Must always be sent to dismiss the spinner, even on error
-			await this.providerRef
-				.deref()
-				?.postMessageToWebview({ type: "condenseTaskContextResponse", text: this.taskId })
+			await this.postToWebviewIfInteractive({ type: "condenseTaskContextResponse", text: this.taskId })
 		}
 	}
 
@@ -5881,9 +6169,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 			// This notification must be sent here (not earlier) because the early check uses stale token count
 			// (before user message is added to history), which could incorrectly skip showing the indicator
 			if (contextManagementWillRun && autoCondenseContext) {
-				await this.providerRef
-					.deref()
-					?.postMessageToWebview({ type: "condenseTaskContextStarted", text: this.taskId })
+				await this.postToWebviewIfInteractive({ type: "condenseTaskContextStarted", text: this.taskId })
 			}
 
 			// Build tools for condensing metadata (same tools used for normal API calls)
@@ -5900,6 +6186,7 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 						experiments: state?.experiments,
 						apiConfiguration,
 						disabledTools: state?.disabledTools,
+						subagentsEnabled: state?.subagentsEnabled,
 						modelInfo: requestModelInfo,
 						includeAllToolsWithRestrictions: false,
 					})
@@ -5977,9 +6264,10 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				// This removes the in-progress spinner and allows the completed result to show
 				// IMPORTANT: Must always be sent to dismiss the spinner, even on error
 				if (contextManagementWillRun && autoCondenseContext) {
-					await this.providerRef
-						.deref()
-						?.postMessageToWebview({ type: "condenseTaskContextResponse", text: this.taskId })
+					await this.postToWebviewIfInteractive({
+						type: "condenseTaskContextResponse",
+						text: this.taskId,
+					})
 				}
 			}
 		}
@@ -6049,11 +6337,26 @@ export class Task extends EventEmitter<TaskEvents> implements TaskLike {
 				experiments: state?.experiments,
 				apiConfiguration,
 				disabledTools: state?.disabledTools,
+				subagentsEnabled: state?.subagentsEnabled,
 				modelInfo,
 				includeAllToolsWithRestrictions: supportsAllowedFunctionNames,
 			})
 			allTools = toolsResult.tools
 			allowedFunctionNames = toolsResult.allowedFunctionNames
+		}
+
+		if (this.subagent) {
+			// Headless runs use their definition's tool policy: no nested spawn,
+			// no delegation, no mode switch, no blocking question.
+			allTools = filterToolsForSubagent(allTools, this.subagent.definition)
+			allowedFunctionNames = filterAllowedFunctionNamesForSubagent(
+				allowedFunctionNames,
+				this.subagent.definition,
+			)
+		} else if (allTools.some((tool) => "function" in tool && tool.function?.name === "spawn_subagent")) {
+			// The parent prompt pays only for the agents this workspace exposes.
+			const catalog = this.providerRef.deref()?.getSubagentRegistry?.()?.getCatalog() ?? []
+			allTools = describeAvailableSubagents(allTools, catalog)
 		}
 
 		const shouldIncludeTools = allTools.length > 0
